@@ -137,7 +137,7 @@ table.det tr.b td{font-weight:700}
   </div>
   <div class="d-body">
     <h2 id="pTitle">Produto</h2>
-    <div class="field"><label for="pCode">Código</label><input class="inp" id="pCode" type="text" autocomplete="off"></div>
+    <div class="field ac"><label for="pCode">Código</label><input class="inp" id="pCode" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sugC" placeholder="Digite o código"><ul class="sug" id="sugC" role="listbox" hidden></ul></div>
     <div class="field ac"><label for="pDesc">Descrição</label>
       <input class="inp" id="pDesc" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sug" placeholder="Digite para buscar no cadastro">
       <ul class="sug" id="sug" role="listbox" hidden></ul></div>
@@ -210,7 +210,7 @@ table.det tr.b td{font-weight:700}
     if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');
     return parseFloat(s)};
 
-  let S=load(), C=loadCat(), byCode=new Map();
+  let S=load(), C=loadCat(), byCode=new Map(), REMOTE=false;
   function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.products))return Object.assign(clone(DEF),s)}catch(e){}return clone(DEF)}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
   function loadCat(){try{const c=JSON.parse(localStorage.getItem(CK));if(c&&Array.isArray(c.items))return c}catch(e){}return {items:[],name:''}}
@@ -234,8 +234,8 @@ table.det tr.b td{font-weight:700}
     end();return rows}
 
   function importText(t,name){importRows(parseCSV(t),name)}
-  function importRows(rows,name){
-    if(!rows.length){toast('Arquivo vazio.');return}
+  function importRows(rows,name,remote){
+    if(!rows.length){if(!remote)toast('Arquivo vazio.');return}
     const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
     let ix={},start=-1;
     for(let r=0;r<Math.min(10,rows.length)&&start<0;r++){
@@ -247,8 +247,9 @@ table.det tr.b td{font-weight:700}
     for(let i=start;i<rows.length;i++){const r=rows[i],c=(r[ix.c]||'').trim(),d=(r[ix.d]||'').trim();
       if(!c&&!d)continue;
       items.push({c,d,p:ix.p>=0?(num(r[ix.p])||0):0,k:ix.k>=0?(num(r[ix.k])||0):0})}
-    if(!items.length){toast('Nenhum produto encontrado. Colunas esperadas: código, descrição, preço.');return}
-    C={items,name};index();saveCat();render();toast(items.length+' produtos importados');
+    if(!items.length){if(!remote)toast('Nenhum produto encontrado. Colunas esperadas: código, descrição, preço.');return}
+    C={items,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
+    if(!remote)toast(items.length+' produtos importados'+(REMOTE?' (somente nesta sessão; ao reabrir, vale o arquivo do GitHub)':''));
   }
   const unesc=s=>s.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g,(m,g)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"}[g]||String.fromCodePoint(g[1]==='x'?parseInt(g.slice(2),16):parseInt(g.slice(1),10))));
   const txt=x=>[...x.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m=>unesc(m[1])).join('');
@@ -293,35 +294,41 @@ table.det tr.b td{font-weight:700}
     e.target.value=''};
 
   /* ---------- Código → descrição / Descrição → busca ---------- */
-  let auto=false,hi=-1,res=[];
+  let auto=false;
   function fill(i){$('pCode').value=i.c;$('pDesc').value=i.d;$('pCur').value=i.p||'';$('pCost').value=i.k||'';auto=true;
     $('hint').textContent=i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.'}
   $('pCode').oninput=()=>{const v=$('pCode').value,i=byCode.get(key(v));
     if(i&&v.trim())fill(i);
     else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false}
-      $('hint').textContent=C.items.length&&v.trim()?'Código não encontrado no cadastro. Preencha manualmente.':''}};
-  function closeSug(){$('sug').hidden=true;$('pDesc').setAttribute('aria-expanded','false');hi=-1}
-  function mark(){[...$('sug').children].forEach((li,n)=>li.classList.toggle('on',n===hi));const on=$('sug').children[hi];if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'})}
-  function search(){
-    const q=norm($('pDesc').value);auto=false;
-    if(!q||!C.items.length){closeSug();return}
-    const tk=q.split(/\s+/);res=[];
-    for(const i of C.items){if(tk.every(t=>i.n.includes(t))){res.push(i);if(res.length>=8)break}}
-    hi=res.length?0:-1;
-    $('sug').innerHTML=res.length?res.map((i,n)=>`<li role="option" data-n="${n}" class="${n===0?'on':''}"><span>${brl(i.p)}</span><b>${esc(i.c)}</b> ${esc(i.d)}</li>`).join(''):'<li class="none">Nenhum item encontrado</li>';
-    $('sug').hidden=false;$('pDesc').setAttribute('aria-expanded','true');
-  }
+      $('hint').textContent=C.items.length&&v.trim()&&!C.items.some(x=>String(x.c).startsWith(v.trim())||key(x.c).startsWith(key(v)))?'Código não encontrado no cadastro. Preencha manualmente.':''}};
+  const AC=[];
+  function closeSug(){AC.forEach(a=>a.close())}
   function pick(i){fill(i);closeSug();$('pQty').focus()}
-  $('pDesc').oninput=search;
-  $('pDesc').onfocus=()=>{if($('pDesc').value)search()};
-  $('pDesc').onblur=closeSug;
-  $('pDesc').onkeydown=e=>{
-    if($('sug').hidden)return;
-    if(e.key==='ArrowDown'){e.preventDefault();hi=Math.min(res.length-1,hi+1);mark()}
-    else if(e.key==='ArrowUp'){e.preventDefault();hi=Math.max(0,hi-1);mark()}
-    else if(e.key==='Enter'&&res[hi]){e.preventDefault();pick(res[hi])}
-    else if(e.key==='Escape'){e.stopPropagation();closeSug()}};
-  $('sug').onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();pick(res[+li.dataset.n])}};
+  function setupAC(inp,list,match,onType){
+    const I=$(inp),L=$(list),a={hi:-1,res:[]};
+    a.close=()=>{L.hidden=true;I.setAttribute('aria-expanded','false');a.hi=-1};
+    const mark=()=>{[...L.children].forEach((li,n)=>li.classList.toggle('on',n===a.hi));const on=L.children[a.hi];if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'})};
+    const open=()=>{
+      const v=I.value.trim();
+      if(!v){a.close();return}
+      if(!C.items.length){a.res=[];L.innerHTML='<li class="none">Nenhum cadastro importado. Use Importar dados.</li>'}
+      else{a.res=match(v);a.hi=a.res.length?0:-1;
+        L.innerHTML=a.res.length?a.res.map((i,n)=>`<li role="option" data-n="${n}" class="${n===0?'on':''}"><span>${brl(i.p)}</span><b>${esc(i.c)}</b> ${esc(i.d)}</li>`).join(''):'<li class="none">Nenhum item encontrado</li>'}
+      L.scrollTop=0;L.hidden=false;I.setAttribute('aria-expanded','true')};
+    I.addEventListener('input',()=>{if(onType)onType();open()});
+    I.addEventListener('focus',open);
+    I.addEventListener('blur',a.close);
+    I.addEventListener('keydown',e=>{
+      if(L.hidden)return;
+      if(e.key==='ArrowDown'){e.preventDefault();a.hi=Math.min(a.res.length-1,a.hi+1);mark()}
+      else if(e.key==='ArrowUp'){e.preventDefault();a.hi=Math.max(0,a.hi-1);mark()}
+      else if(e.key==='Enter'&&a.res[a.hi]){e.preventDefault();pick(a.res[a.hi])}
+      else if(e.key==='Escape'){e.stopPropagation();a.close()}});
+    L.onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();pick(a.res[+li.dataset.n])}};
+    AC.push(a)}
+  const byNum=(x,y)=>String(x.c).localeCompare(String(y.c),undefined,{numeric:true});
+  setupAC('pCode','sugC',v=>C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v))).sort(byNum).slice(0,300));
+  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return C.items.filter(i=>tk.every(t=>i.n.includes(t))).slice(0,300)},()=>{auto=false});
 
   let editIdx=-1;
   function startEdit(i){
@@ -443,6 +450,24 @@ table.det tr.b td{font-weight:700}
     const tr=e.target.closest('tr[data-i]');if(tr){S.sel=+tr.dataset.i;save();render()}};
   $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Dados restaurados (o cadastro importado foi mantido)')};
 
+  /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
+  async function loadRemote(){
+    /* No Apps Script: o cadastro vem da planilha privada, só depois de o servidor conferir o e-mail */
+    if(window.google&&google.script&&google.script.run){
+      google.script.run.withSuccessHandler(r=>{if(r&&r.length)importRows(r,'planilha privada · Google',true)}).withFailureHandler(()=>{}).catalogo();
+      return}
+    if(location.protocol==='file:')return;
+    try{
+      let rows=null,nm='';
+      const rc=await fetch('produtos.csv',{cache:'no-cache'});
+      if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
+        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
+      else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
+        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer());nm='produtos.xlsx'}}
+      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true)
+    }catch(e){}
+  }
+  loadRemote();
   render();
 })();
 </script>
