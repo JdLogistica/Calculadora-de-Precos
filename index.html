@@ -306,21 +306,23 @@ table.det tr.b td{font-weight:700}
     else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false}
       $('hint').textContent=C.items.length&&v.trim()&&!C.items.some(x=>String(x.c).startsWith(v.trim())||key(x.c).startsWith(key(v)))?'Código não encontrado no cadastro. Preencha manualmente.':''}};
   const AC=[];
+  let quiet=false;
+  const fq=el=>{quiet=true;el.focus();quiet=false};
   function closeSug(){AC.forEach(a=>a.close())}
   function pick(i){fill(i);closeSug();$('pQty').focus()}
-  function setupAC(inp,list,match,onType){
+  function setupAC(inp,list,match,all,onType){
     const I=$(inp),L=$(list),a={hi:-1,res:[]};
     a.close=()=>{L.hidden=true;I.setAttribute('aria-expanded','false');a.hi=-1};
     const mark=()=>{[...L.children].forEach((li,n)=>li.classList.toggle('on',n===a.hi));const on=L.children[a.hi];if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'})};
     const open=()=>{
       const v=I.value.trim();
-      if(!v){a.close();return}
       if(!C.items.length){a.res=[];L.innerHTML='<li class="none">Nenhum cadastro importado. Use Importar dados.</li>'}
-      else{a.res=match(v);a.hi=a.res.length?0:-1;
+      else{a.res=v?match(v):all();a.hi=a.res.length?0:-1;
         L.innerHTML=a.res.length?a.res.map((i,n)=>`<li role="option" data-n="${n}" class="${n===0?'on':''}"><span>${brl(i.p)}</span><b>${esc(i.c)}</b> ${esc(i.d)}</li>`).join(''):'<li class="none">Nenhum item encontrado</li>'}
       L.scrollTop=0;L.hidden=false;I.setAttribute('aria-expanded','true')};
     I.addEventListener('input',()=>{if(onType)onType();open()});
-    I.addEventListener('focus',open);
+    I.addEventListener('focus',()=>{if(!quiet)open()});
+    I.addEventListener('click',open);
     I.addEventListener('blur',a.close);
     I.addEventListener('keydown',e=>{
       if(L.hidden)return;
@@ -331,8 +333,8 @@ table.det tr.b td{font-weight:700}
     L.onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();pick(a.res[+li.dataset.n])}};
     AC.push(a)}
   const byNum=(x,y)=>String(x.c).localeCompare(String(y.c),undefined,{numeric:true});
-  setupAC('pCode','sugC',v=>C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v))).sort(byNum).slice(0,300));
-  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return C.items.filter(i=>tk.every(t=>i.n.includes(t))).slice(0,300)},()=>{auto=false});
+  setupAC('pCode','sugC',v=>C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v))).sort(byNum).slice(0,300),()=>C.items.slice().sort(byNum).slice(0,300));
+  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return C.items.filter(i=>tk.every(t=>i.n.includes(t))).slice(0,300)},()=>C.items.slice().sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),()=>{auto=false});
 
   let editIdx=-1;
   function startEdit(i){
@@ -346,7 +348,7 @@ table.det tr.b td{font-weight:700}
     editIdx=-1;['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');
     $('hint').textContent='';$('addBtn').textContent='Incluir dados';$('cancelBtn').hidden=true;$('pTitle').textContent='Produto'}
   $('cancelBtn').onclick=endEdit;
-  $('clearBtn').onclick=()=>{endEdit();closeSug();auto=false;$('pCode').focus()};
+  $('clearBtn').onclick=()=>{endEdit();closeSug();auto=false;fq($('pCode'))};
   let clrT=null;
   $('clearTable').onclick=()=>{
     const b=$('clearTable');
@@ -360,7 +362,7 @@ table.det tr.b td{font-weight:700}
     if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
     if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]={code,name,cost,current:cur,qty};S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');return}
     S.products.push({code,name,cost,current:cur,qty});S.sel=S.products.length-1;save();render();
-    ['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();$('pCode').focus();
+    ['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();fq($('pCode'));
     toast('Dados incluídos');
   };
 
@@ -450,7 +452,7 @@ table.det tr.b td{font-weight:700}
     if($(k+'R'))$(k+'R').oninput=e=>set(e.target.value)});
 
   function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-  function setOpen(o){document.body.classList.toggle('open',o);$('drawer').setAttribute('aria-hidden',!o);$('openBtn').setAttribute('aria-expanded',o);if(o)$('pCode').focus()}
+  function setOpen(o){document.body.classList.toggle('open',o);$('drawer').setAttribute('aria-hidden',!o);$('openBtn').setAttribute('aria-expanded',o);if(o)fq($('pCode'))}
   $('openBtn').onclick=()=>setOpen(true);
   $('closeBtn').onclick=()=>setOpen(false);
   $('scrim').onclick=()=>setOpen(false);
