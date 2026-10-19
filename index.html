@@ -197,6 +197,11 @@ table.det tr.b td{font-weight:700}
 
 <script>
 (function(){
+  /* ===== CONFIGURAÇÃO DA ATUALIZAÇÃO PELA PLANILHA (para o link do GitHub) ===== */
+  const GOOGLE_CLIENT_ID='';  /* cole aqui o ID do cliente OAuth do Google (termina em .apps.googleusercontent.com) */
+  const PLANILHA_ID='17gE1cYdedvmByskT4vhsCeFnKM_-4kwTbvziFIWxfxg';
+  const ABA_PRODUTOS='Produtos';
+  /* ============================================================================ */
   const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1';
   const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,
     products:[]};
@@ -484,20 +489,40 @@ table.det tr.b td{font-weight:700}
     }catch(e){}
   }
   loadRemote();
-  /* Atualizar dados: lê de novo a planilha do Google. Só funciona para quem tem acesso à planilha. */
+  /* Atualizar dados: lê de novo a planilha do Google. Só consegue quem tem acesso à planilha. */
+  let gisP=null,gTok=null,gExp=0;
+  function carregarGIS(){
+    if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();
+    if(gisP)return gisP;
+    gisP=new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;
+      s.onload=()=>ok();s.onerror=()=>{gisP=null;ko(new Error('gis'))};document.head.appendChild(s)});
+    return gisP}
+  function pedirToken(){return new Promise((ok,ko)=>{
+    if(gTok&&Date.now()<gExp){ok(gTok);return}
+    google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:'https://www.googleapis.com/auth/spreadsheets.readonly',
+      callback:r=>{if(r&&r.access_token){gTok=r.access_token;gExp=Date.now()+((r.expires_in||3600)-60)*1000;ok(gTok)}else ko(new Error((r&&r.error)||'sem token'))},
+      error_callback:e=>ko(new Error((e&&e.type)||'cancelado'))}).requestAccessToken()})}
+  async function lerPlanilha(){
+    await carregarGIS();const t=await pedirToken();
+    const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+PLANILHA_ID+'/values/'+encodeURIComponent(ABA_PRODUTOS),{headers:{Authorization:'Bearer '+t}});
+    if(r.status===401||r.status===403||r.status===404){gTok=null;const e=new Error('perm');e.perm=true;throw e}
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();
+    return (j.values||[]).map(l=>l.map(x=>x==null?'':String(x)))}
+  $('updBtn').addEventListener('pointerdown',()=>{if(!(window.google&&google.script&&google.script.run)&&GOOGLE_CLIENT_ID)carregarGIS().catch(()=>{})});
   $('updBtn').onclick=()=>{
-    const b=$('updBtn');
-    if(!(window.google&&google.script&&google.script.run)){toast('A atualização pela planilha só funciona no link do Apps Script.');return}
+    const b=$('updBtn'),noApps=!(window.google&&google.script&&google.script.run);
+    if(noApps&&!GOOGLE_CLIENT_ID){toast('Falta configurar o ID do cliente Google no arquivo index.html.');return}
     const txt=b.textContent;b.disabled=true;b.textContent='Atualizando…';
     const fim=()=>{b.disabled=false;b.textContent=txt};
-    google.script.run
-      .withSuccessHandler(r=>{fim();
-        if(!r||r.length<2){toast('A aba Produtos da planilha está vazia.');return}
-        const antes=C;importRows(r,'planilha Google · atualizada',true);
-        if(C===antes){toast('Não encontrei produtos válidos na aba Produtos. Confira o cabeçalho.');return}
-        toast(C.items.length+' produtos atualizados da planilha.')})
-      .withFailureHandler(()=>{fim();toast('Sem permissão para atualizar: é preciso ter acesso à planilha.')})
-      .catalogo()};
+    const ok=r=>{fim();
+      if(!r||r.length<2){toast('A aba Produtos da planilha está vazia.');return}
+      const antes=C;importRows(r,'planilha Google · atualizada',!noApps);
+      if(C===antes){toast('Não encontrei produtos válidos na aba Produtos. Confira o cabeçalho.');return}
+      toast(C.items.length+' produtos atualizados da planilha.')};
+    const ko=e=>{fim();toast(e&&e.perm?'Sem permissão para atualizar: é preciso ter acesso à planilha.':'Não foi possível acessar a planilha. Entre com a conta que tem acesso e tente de novo.')};
+    if(noApps)lerPlanilha().then(ok,ko);
+    else google.script.run.withSuccessHandler(ok).withFailureHandler(()=>ko({perm:true})).catalogo()};
   render();
 })();
 </script>
