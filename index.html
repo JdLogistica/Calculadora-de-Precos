@@ -126,6 +126,7 @@ table.det tr.b td{font-weight:700}
   </button>
   <h1>Simulador de Precificação<span class="sub">Calculadora de preço de venda</span></h1>
   <button class="tbtn" id="impBtn" type="button">Importar dados</button>
+  <button class="tbtn" id="updBtn" type="button">Atualizar dados</button>
   <button class="tbtn" id="resetBtn" type="button">Restaurar</button>
   <input type="file" id="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 </header>
@@ -483,6 +484,20 @@ table.det tr.b td{font-weight:700}
     }catch(e){}
   }
   loadRemote();
+  /* Atualizar dados: lê de novo a planilha do Google. Só funciona para quem tem acesso à planilha. */
+  $('updBtn').onclick=()=>{
+    const b=$('updBtn');
+    if(!(window.google&&google.script&&google.script.run)){toast('A atualização pela planilha só funciona no link do Apps Script.');return}
+    const txt=b.textContent;b.disabled=true;b.textContent='Atualizando…';
+    const fim=()=>{b.disabled=false;b.textContent=txt};
+    google.script.run
+      .withSuccessHandler(r=>{fim();
+        if(!r||r.length<2){toast('A aba Produtos da planilha está vazia.');return}
+        const antes=C;importRows(r,'planilha Google · atualizada',true);
+        if(C===antes){toast('Não encontrei produtos válidos na aba Produtos. Confira o cabeçalho.');return}
+        toast(C.items.length+' produtos atualizados da planilha.')})
+      .withFailureHandler(()=>{fim();toast('Sem permissão para atualizar: é preciso ter acesso à planilha.')})
+      .catalogo()};
   render();
 })();
 </script>
