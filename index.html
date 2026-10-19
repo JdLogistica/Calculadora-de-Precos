@@ -121,356 +121,61 @@ table.det tr.b td{font-weight:700}
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.6" fill="currentColor"/><circle cx="11" cy="8" r="1.6" fill="currentColor"/><circle cx="7" cy="12" r="1.6" fill="currentColor"/></svg>
     Produto e parâmetros
   </button>
-  <h1>Simulador de Precificação<span class="sub">Calculadora de preço de venda</span></h1>
-  <button class="tbtn" id="impBtn" type="button">Importar dados</button>
-  <button class="tbtn" id="resetBtn" type="button">Restaurar</button>
-  <input type="file" id="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+  <h1>Simulador de Precificação <span class="sub">Calculadora de preço de venda</span></h1>
 </header>
 
+<main>
+  <div class="strip">
+    Clique em uma linha para ver o cálculo completo da <b>Calculadora do produto selecionado</b>.
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="l">Faturamento por produto</div>
+      <div class="v" id="kpiFaturamento">R$ 0,00</div>
+    </div>
+    <div class="kpi k2">
+      <div class="l">Margem de Contribuição Atual</div>
+      <div class="v" id="kpiMargem">0,0%</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="card">
+      <h3>Preços por produto <span class="leg"><i></i>Custo <i></i>Atual <i></i>Sugerido <i></i>Marketplace</span></h3>
+      <div class="c" id="tabelaContainer">
+        <!-- Tabela principal injetada aqui -->
+        <table id="mainT">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Produto</th>
+              <th>Custo</th>
+              <th>Preço atual</th>
+              <th>Preço sugerido</th>
+              <th>Marketplace (sug.)</th>
+              <th>MC atual</th>
+              <th>Preço c/ desconto</th>
+              <th>Faturamento atual</th>
+              <th>Diferença</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela">
+            <tr><td colspan="10" class="empty">Carregando dados da planilha...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-label="Campos editáveis" aria-hidden="true">
+<div class="drawer" id="drawer">
   <div class="d-head">
     <strong>Campos editáveis</strong>
-    <button class="x" id="closeBtn" type="button" aria-label="Fechar painel">
-      <svg width="16" height="16" viewBox="0 0 16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>
-    </button>
+    <button class="x" id="closeBtn">&times;</button>
   </div>
   <div class="d-body">
-    <h2 id="pTitle">Produto</h2>
-    <div class="field ac"><label for="pCode">Código</label><input class="inp" id="pCode" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sugC" placeholder="Digite o código"><ul class="sug" id="sugC" role="listbox" hidden></ul></div>
-    <div class="field ac"><label for="pDesc">Descrição</label>
-      <input class="inp" id="pDesc" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sug" placeholder="Digite para buscar no cadastro">
-      <ul class="sug" id="sug" role="listbox" hidden></ul></div>
-    <div class="hint" id="hint" aria-live="polite"></div>
-    <div class="g2">
-      <div class="field"><label for="pCost">Custo (R$)</label><input class="inp" id="pCost" type="number" min="0" step="0.01" inputmode="decimal"></div>
-      <div class="field"><label for="pCur">Preço atual (R$)</label><input class="inp" id="pCur" type="number" min="0" step="0.01" inputmode="decimal"></div>
-    </div>
-    <div class="field"><label for="pQty">Quantidade vendida</label><input class="inp" id="pQty" type="number" min="0" step="1" inputmode="numeric"></div>
-    <button class="add" id="addBtn" type="button">Incluir dados</button>
-    <button class="cancel" id="cancelBtn" type="button" hidden>Cancelar edição</button>
-
-    <h2>Parâmetros de entrada</h2>
-    <div id="params"></div>
-    <div class="warn" id="warn">Margem + impostos e taxas precisa ser menor que 100% para calcular o preço sugerido.</div>
-    <h2>Impostos e taxas (%)</h2>
-    <div class="g2" id="taxes"></div>
-  </div>
-</aside>
-
-<main>
-  <div class="strip" id="strip"></div>
-  <section class="kpis" id="kpis"></section>
-
-  <section class="charts">
-    <div class="card">
-      <h3>Preços por produto
-        <span class="leg"><span><i style="background:var(--t9)"></i>Custo</span><span><i style="background:var(--t6)"></i>Atual</span><span><i style="background:var(--y)"></i>Sugerido</span><span><i style="background:#7a8f98"></i>Marketplace</span></span></h3>
-      <div class="c" id="ch1"></div>
-    </div>
-    <div class="card">
-      <h3>Faturamento por produto
-        <span class="leg"><span><i style="background:var(--t6)"></i>Atual</span><span><i style="background:var(--y)"></i>Com desconto</span></span></h3>
-      <div class="c" id="ch2"></div>
-    </div>
-  </section>
-
-  <section class="card" style="margin-top:12px">
-    <h3>Simulação por produto <span class="leg">Clique em uma linha para ver o cálculo completo</span></h3>
-    <div class="tw"><table id="mainT">
-      <thead><tr><th>Código</th><th>Produto</th><th>Custo</th><th>Preço atual</th><th>Preço sugerido</th><th>Marketplace (sug.)</th><th>MC atual</th><th>Preço c/ desconto</th><th>Faturamento atual</th><th>Diferença</th><th></th></tr></thead>
-      <tbody id="tb"></tbody>
-    </table></div>
-  </section>
-
-  <section class="card detcard" style="margin-top:12px">
-    <h3>Calculadora do produto selecionado</h3>
-    <div class="tw"><table class="det"><tbody id="det"></tbody></table></div>
-  </section>
-</main>
-<div class="toast" id="toast" role="status"></div>
-
-<script>
-(function(){
-  const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1';
-  const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,
-    products:[{code:'626',name:'RUN BACARDI',cost:1.8241667,current:6.9,qty:200}]};
-  const PR=[['mc','Margem de contribuição desejada (%)',100],['mkt','Taxa do marketplace (%)',50],['desc','Desconto simulado (%)',50]];
-  const TX=[['csll','CSLL + IR'],['pis','PIS'],['cofins','COFINS'],['icms','ICMS'],['cartao','Cartão'],['comissao','Comissão']];
-  const $=id=>document.getElementById(id), clone=o=>JSON.parse(JSON.stringify(o));
-  const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  const pct=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
-  const fp=v=>pct(v*100);
-  const n2=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const short=v=>Math.abs(v)>=1000?(v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mil':v.toLocaleString('pt-BR',{maximumFractionDigits:0});
-  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const key=c=>String(c).trim().replace(/^0+(?=.)/,'');
-  const num=v=>{let s=String(v==null?'':v).replace(/[^\d.,-]/g,'');if(!s)return NaN;
-    if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');
-    return parseFloat(s)};
-
-  let S=load(), C=loadCat(), byCode=new Map(), REMOTE=false;
-  function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.products))return Object.assign(clone(DEF),s)}catch(e){}return clone(DEF)}
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-  function loadCat(){try{const c=JSON.parse(localStorage.getItem(CK));if(c&&Array.isArray(c.items))return c}catch(e){}return {items:[],name:''}}
-  function saveCat(){try{localStorage.setItem(CK,JSON.stringify(C))}catch(e){toast('Cadastro grande demais para salvar no navegador; importe de novo ao abrir.')}}
-  function index(){C.items.forEach(i=>i.n=norm(i.c+' '+i.d));byCode=new Map(C.items.map(i=>[key(i.c),i]))}
-  index();
-
-  /* ---------- Importação CSV ---------- */
-  function parseCSV(t){
-    t=t.replace(/^\uFEFF/,'');
-    const first=t.split(/\r?\n/,1)[0];
-    const d=[';','\t',','].sort((a,b)=>first.split(b).length-first.split(a).length)[0];
-    const rows=[];let r=[],f='',q=false;
-    const end=()=>{r.push(f);f='';if(r.some(x=>x.trim()))rows.push(r);r=[]};
-    for(let i=0;i<t.length;i++){const c=t[i];
-      if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
-      else if(c==='"')q=true;
-      else if(c===d){r.push(f);f=''}
-      else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;end()}
-      else f+=c}
-    end();return rows}
-
-  function importText(t,name){importRows(parseCSV(t),name)}
-  function importRows(rows,name,remote){
-    if(!rows.length){if(!remote)toast('Arquivo vazio.');return}
-    const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
-    let ix={},start=-1;
-    for(let r=0;r<Math.min(10,rows.length)&&start<0;r++){
-      const h=rows[r].map(x=>norm(x).replace(/[^a-z]/g,''));
-      const t={};for(const k in al)t[k]=h.findIndex(x=>al[k].includes(x));
-      if(t.c>=0&&t.d>=0){ix=t;start=r+1}}
-    if(start<0){ix={c:0,d:1,p:2,k:3};start=(rows[0].length>2&&isNaN(num(rows[0][2])))?1:0}
-    const items=[];
-    for(let i=start;i<rows.length;i++){const r=rows[i],c=(r[ix.c]||'').trim(),d=(r[ix.d]||'').trim();
-      if(!c&&!d)continue;
-      items.push({c,d,p:ix.p>=0?(num(r[ix.p])||0):0,k:ix.k>=0?(num(r[ix.k])||0):0})}
-    if(!items.length){if(!remote)toast('Nenhum produto encontrado. Colunas esperadas: código, descrição, preço.');return}
-    C={items,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
-    if(!remote)toast(items.length+' produtos importados'+(REMOTE?' (somente nesta sessão; ao reabrir, vale o arquivo do GitHub)':''));
-  }
-  const unesc=s=>s.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g,(m,g)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"}[g]||String.fromCodePoint(g[1]==='x'?parseInt(g.slice(2),16):parseInt(g.slice(1),10))));
-  const txt=x=>[...x.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m=>unesc(m[1])).join('');
-  async function readXlsx(buf){
-    const u=new Uint8Array(buf),dv=new DataView(buf);
-    let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
-    if(e<0)throw new Error('zip');
-    const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const files={};
-    for(let i=0;i<n;i++){
-      const nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true);
-      files[new TextDecoder().decode(u.subarray(p+46,p+46+nl))]={m:dv.getUint16(p+10,true),s:dv.getUint32(p+20,true),o:dv.getUint32(p+42,true)};
-      p+=46+nl+el+cl}
-    const get=async name=>{const f=files[name];if(!f)return null;
-      const o=f.o+30+dv.getUint16(f.o+26,true)+dv.getUint16(f.o+28,true),d=u.subarray(o,o+f.s);
-      if(f.m===0)return new TextDecoder().decode(d);
-      return new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()};
-    const ss=[],sx=await get('xl/sharedStrings.xml');
-    if(sx)for(const m of sx.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g))ss.push(txt(m[1]));
-    const path=files['xl/worksheets/sheet1.xml']?'xl/worksheets/sheet1.xml':Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort()[0];
-    const xml=await get(path);if(!xml)throw new Error('sheet');
-    const rows=[];
-    for(const rm of xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)){
-      const r=[];
-      for(const cm of rm[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){
-        const at=cm[1],body=cm[2]||'',ref=at.match(/\br="([A-Z]+)\d+"/),t=(at.match(/\bt="(\w+)"/)||[])[1],v=body.match(/<v>([\s\S]*?)<\/v>/);
-        let val=v?unesc(v[1]):'';
-        if(t==='s')val=ss[+val]||'';else if(t==='inlineStr')val=txt(body);
-        let col=r.length;if(ref){col=0;for(const ch of ref[1])col=col*26+ch.charCodeAt(0)-64;col--}
-        r[col]=val}
-      for(let i=0;i<r.length;i++)if(r[i]===undefined)r[i]='';
-      if(r.some(x=>String(x).trim()))rows.push(r)}
-    return rows}
-  $('impBtn').onclick=()=>$('file').click();
-  $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
-    try{
-      const buf=await f.arrayBuffer(),b=new Uint8Array(buf,0,2);
-      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b))importRows(await readXlsx(buf),f.name);
-      else{let t=new TextDecoder('utf-8').decode(buf);
-        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);
-        importText(t,f.name)}
-    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv.')}
-    e.target.value=''};
-
-  /* ---------- Código → descrição / Descrição → busca ---------- */
-  let auto=false;
-  function fill(i){$('pCode').value=i.c;$('pDesc').value=i.d;$('pCur').value=i.p||'';$('pCost').value=i.k||'';auto=true;
-    $('hint').textContent=i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.'}
-  $('pCode').oninput=()=>{const v=$('pCode').value,i=byCode.get(key(v));
-    if(i&&v.trim())fill(i);
-    else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false}
-      $('hint').textContent=C.items.length&&v.trim()&&!C.items.some(x=>String(x.c).startsWith(v.trim())||key(x.c).startsWith(key(v)))?'Código não encontrado no cadastro. Preencha manualmente.':''}};
-  const AC=[];
-  function closeSug(){AC.forEach(a=>a.close())}
-  function pick(i){fill(i);closeSug();$('pQty').focus()}
-  function setupAC(inp,list,match,onType){
-    const I=$(inp),L=$(list),a={hi:-1,res:[]};
-    a.close=()=>{L.hidden=true;I.setAttribute('aria-expanded','false');a.hi=-1};
-    const mark=()=>{[...L.children].forEach((li,n)=>li.classList.toggle('on',n===a.hi));const on=L.children[a.hi];if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'})};
-    const open=()=>{
-      const v=I.value.trim();
-      if(!v){a.close();return}
-      if(!C.items.length){a.res=[];L.innerHTML='<li class="none">Nenhum cadastro importado. Use Importar dados.</li>'}
-      else{a.res=match(v);a.hi=a.res.length?0:-1;
-        L.innerHTML=a.res.length?a.res.map((i,n)=>`<li role="option" data-n="${n}" class="${n===0?'on':''}"><span>${brl(i.p)}</span><b>${esc(i.c)}</b> ${esc(i.d)}</li>`).join(''):'<li class="none">Nenhum item encontrado</li>'}
-      L.scrollTop=0;L.hidden=false;I.setAttribute('aria-expanded','true')};
-    I.addEventListener('input',()=>{if(onType)onType();open()});
-    I.addEventListener('focus',open);
-    I.addEventListener('blur',a.close);
-    I.addEventListener('keydown',e=>{
-      if(L.hidden)return;
-      if(e.key==='ArrowDown'){e.preventDefault();a.hi=Math.min(a.res.length-1,a.hi+1);mark()}
-      else if(e.key==='ArrowUp'){e.preventDefault();a.hi=Math.max(0,a.hi-1);mark()}
-      else if(e.key==='Enter'&&a.res[a.hi]){e.preventDefault();pick(a.res[a.hi])}
-      else if(e.key==='Escape'){e.stopPropagation();a.close()}});
-    L.onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();pick(a.res[+li.dataset.n])}};
-    AC.push(a)}
-  const byNum=(x,y)=>String(x.c).localeCompare(String(y.c),undefined,{numeric:true});
-  setupAC('pCode','sugC',v=>C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v))).sort(byNum).slice(0,300));
-  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return C.items.filter(i=>tk.every(t=>i.n.includes(t))).slice(0,300)},()=>{auto=false});
-
-  let editIdx=-1;
-  function startEdit(i){
-    const p=S.products[i];if(!p)return;
-    editIdx=i;S.sel=i;auto=false;closeSug();
-    $('pCode').value=p.code;$('pDesc').value=p.name;$('pCost').value=p.cost;$('pCur').value=p.current;$('pQty').value=p.qty;
-    $('hint').textContent='Altere os campos e clique em Salvar alterações.';
-    $('addBtn').textContent='Salvar alterações';$('cancelBtn').hidden=false;$('pTitle').textContent='Editar produto';
-    render();setOpen(true)}
-  function endEdit(){
-    editIdx=-1;['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');
-    $('hint').textContent='';$('addBtn').textContent='Incluir dados';$('cancelBtn').hidden=true;$('pTitle').textContent='Produto'}
-  $('cancelBtn').onclick=endEdit;
-  $('addBtn').onclick=()=>{
-    const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=num($('pCost').value),cur=num($('pCur').value),qty=parseInt($('pQty').value,10);
-    if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
-    if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]={code,name,cost,current:cur,qty};S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');return}
-    S.products.push({code,name,cost,current:cur,qty});S.sel=S.products.length-1;save();render();
-    ['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();$('pCode').focus();
-    toast('Dados incluídos');
-  };
-
-  /* ---------- Cálculos (mesmas fórmulas da aba BEBIDAS QUENTES) ---------- */
-  function calc(p){
-    const a=k=>(S[k]||0)/100, tx=a('csll')+a('pis')+a('cofins')+a('icms')+a('cartao')+a('comissao');
-    const cost=p.cost,pr=p.current,den=1-(tx+a('mc')),r={p,cost,pr,tx,den};
-    r.ct=cost+tx*pr;r.mc=pr-r.ct;r.mcp=pr?r.mc/pr:0;r.mk=cost?pr/cost:0;
-    r.sug=den>0?cost/den:0;r.mcs=r.sug-(cost+tx*r.sug);r.mks=cost?r.sug/cost:0;
-    r.f=1-a('mkt');r.mktA=r.f>0?pr/r.f:0;r.mktS=r.f>0?r.sug/r.f:0;
-    r.dv=pr*a('desc');r.pd=pr-r.dv;r.mcd=r.pd-(cost+tx*r.pd);r.mcdp=r.pd?r.mcd/r.pd:0;
-    r.fat=p.qty*pr;r.mcv=r.fat*r.mcp;r.fatd=p.qty*r.pd;r.dif=r.fat-r.fatd;r.mcdv=r.fatd*r.mcdp;
-    r.dmc=r.mcv-r.mcdv;r.meta=r.mcd?r.dmc/r.mcd:0;
-    return r}
-
-  function lines(r){
-    const a=k=>(S[k]||0)/100,m=a('mkt'),q=r.p.qty+' un.';
-    const L=[['#','Custos e impostos sobre o preço atual'],['Custo',r.pr?r.cost/r.pr:0,r.cost]];
-    TX.forEach(([k,n])=>L.push([n,a(k),a(k)*r.pr]));
-    L.push(['Custo total',r.pr?r.ct/r.pr:0,r.ct,'b'],['Preço atual',null,r.pr,'b'],['Margem de contribuição atual',r.mcp,r.mc],['Markup multiplicador',null,r.mk,'n'],
-      ['#','Preço sugerido'],['Preço sugerido',null,r.sug,'b'],['Divisor: 100% − (impostos + taxas + margem)',r.den,null],['Margem de contribuição desejada',a('mc'),r.mcs],['Markup multiplicador sugerido',null,r.mks,'n'],
-      ['#','Marketplace'],['Taxa — base preço atual',m,r.mktA*m],['Preço marketplace — base preço atual',null,r.mktA,'b'],
-      ['Taxa — base preço sugerido',m,r.mktS*m],['Preço marketplace — base preço sugerido',null,r.mktS,'b'],['Fator multiplicador',r.f,null],
-      ['#','Simulação para desconto'],['Desconto',a('desc'),r.dv],['Preço com desconto',null,r.pd,'b'],['Margem de contribuição após desconto',r.mcdp,r.mcd],
-      ['Quantidade vendida × preço atual',q,r.fat],['MC atual × venda atual',r.mcp,r.mcv],['Quantidade vendida × preço com desconto',q,r.fatd],
-      ['Diferença de faturamento após desconto',null,r.dif],['MC com desconto × venda atual',r.mcdp,r.mcdv],['Diferença de MC atual e MC com desconto',null,r.dmc],
-      ['Meta para obter a mesma MC (unidades extras)',null,r.meta,'n']);
-    return L}
-
-  /* ---------- Gráficos ---------- */
-  function bars(el,cats,series){
-    if(!cats.length){el.innerHTML='<div class="empty">Nenhum produto. Abra Produto e parâmetros e inclua dados.</div>';return}
-    const W=600,H=270,L=52,R=8,B=40,pw=W-L-R;
-    const lab=v=>v>=1000?v.toLocaleString('pt-BR',{maximumFractionDigits:0}):n2(v);
-    const gw=pw/cats.length,bw=Math.min(34,gw*.78/series.length);
-    const mxl=Math.max(...series.flatMap(s=>s.v.map(v=>lab(v).length)));
-    const rot=mxl*5.6>bw+3,T=rot?16+mxl*5.8:20,ph=H-T-B;
-    const max=Math.max(1,...series.flatMap(s=>s.v))*1.1;
-    let g='';
-    for(let i=0;i<=4;i++){const y=T+ph-ph*i/4;
-      g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#e3ecef"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="#5c7480">${short(max*i/4)}</text>`}
-    cats.forEach((c,i)=>{const cx=L+gw*i+gw/2,x0=cx-bw*series.length/2;
-      series.forEach((s,j)=>{const h=Math.max(0,ph*s.v[i]/max);
-        g+=`<rect x="${x0+bw*j}" y="${T+ph-h}" width="${bw-2}" height="${h}" fill="${s.c}" rx="1.5"><title>${esc(c)} · ${s.n}: ${brl(s.v[i])}</title></rect>`;
-        const lx=x0+bw*j+(bw-2)/2,ly=T+ph-h-4,lt=lab(s.v[i]);
-        g+=rot?`<text transform="translate(${lx+3.5},${ly}) rotate(-90)" font-size="10" fill="#1c2b30">${lt}</text>`:`<text x="${lx}" y="${ly}" text-anchor="middle" font-size="10" fill="#1c2b30">${lt}</text>`});
-      const t=c.length>12?c.slice(0,11)+'…':c;
-      g+=`<text x="${cx}" y="${H-16}" text-anchor="middle" font-size="11" fill="#1c2b30">${esc(t)}</text>`});
-    el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`}
-
-  /* ---------- Render ---------- */
-  function render(){
-    const rows=S.products.map(calc);
-    if(S.sel>=rows.length)S.sel=rows.length-1;
-    if(S.sel<0)S.sel=0;
-    const s=rows[S.sel];
-    PR.concat(TX).forEach(([k])=>{const n=$(k+'N'),r=$(k+'R');if(document.activeElement!==n)n.value=S[k];if(r)r.value=S[k]});
-    const den=1-((S.csll+S.pis+S.cofins+S.icms+S.cartao+S.comissao+S.mc)/100);
-    $('warn').style.display=den>0?'none':'block';
-
-    $('strip').innerHTML=(s?`<b>${esc(s.p.code||'—')} · ${esc(s.p.name)}</b> &nbsp;produto em análise`:'Nenhum produto em análise')+
-      ` &nbsp;|&nbsp; Cadastro: ${C.items.length?C.items.length+' produtos'+(C.name?' ('+esc(C.name)+')':''):'nenhum arquivo importado — use Importar dados'}`;
-
-    $('kpis').innerHTML=s?[['Custo',brl(s.cost)],['Preço atual',brl(s.pr)],['Preço sugerido',brl(s.sug),'k2'],['MC atual',fp(s.mcp),s.mc<0?'neg':''],
-      ['Markup atual',n2(s.mk)],['Markup sugerido',n2(s.mks),'k2'],['Marketplace (sugerido)',brl(s.mktS)],['Preço com desconto',brl(s.pd)]]
-      .map(k=>`<div class="kpi ${k[2]||''}"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join(''):'';
-
-    const cats=rows.map(r=>r.p.name);
-    bars($('ch1'),cats,[{n:'Custo',c:'#143b46',v:rows.map(r=>r.cost)},{n:'Atual',c:'#25879b',v:rows.map(r=>r.pr)},{n:'Sugerido',c:'#f2c811',v:rows.map(r=>r.sug)},{n:'Marketplace',c:'#7a8f98',v:rows.map(r=>r.mktS)}]);
-    bars($('ch2'),cats,[{n:'Atual',c:'#25879b',v:rows.map(r=>r.fat)},{n:'Com desconto',c:'#f2c811',v:rows.map(r=>r.fatd)}]);
-
-    $('tb').innerHTML=rows.map((r,i)=>`<tr data-i="${i}" class="${i===S.sel?'on':''}"><td>${esc(r.p.code)}</td><td>${esc(r.p.name)}</td><td>${brl(r.cost)}</td><td>${brl(r.pr)}</td><td>${brl(r.sug)}</td><td>${brl(r.mktS)}</td><td class="${r.mc<0?'neg':''}">${fp(r.mcp)}</td><td>${brl(r.pd)}</td><td>${brl(r.fat)}</td><td class="${r.dif<0?'neg':''}">${brl(r.dif)}</td><td><button class="ed" data-edit="${i}" aria-label="Editar ${esc(r.p.name)}" title="Editar"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L5 13.5 2 14l.5-3z"/></svg></button><button class="del" data-del="${i}" aria-label="Remover ${esc(r.p.name)}" title="Remover">×</button></td></tr>`).join('')
-      ||'<tr><td colspan="11" class="empty" style="text-align:center">Nenhum produto incluído.</td></tr>';
-
-    $('det').innerHTML=s?lines(s).map(l=>l[0]==='#'?`<tr class="sec"><td colspan="3">${l[1]}</td></tr>`:
-      `<tr class="${l[3]==='b'?'b':''}"><td>${l[0]}</td><td>${l[1]==null?'':typeof l[1]==='number'?fp(l[1]):l[1]}</td><td class="${l[2]<0?'neg':''}">${l[2]==null?'':l[3]==='n'?n2(l[2]):brl(l[2])}</td></tr>`).join('')
-      :'<tr><td class="empty">Inclua um produto para ver o cálculo.</td></tr>';
-  }
-
-  /* ---------- Painel, parâmetros e eventos ---------- */
-  $('params').innerHTML=PR.map(([k,l,mx])=>`<div class="field"><label for="${k}N">${l}</label><div class="rng"><input type="range" id="${k}R" min="0" max="${mx}" step="0.5"><input class="inp" type="number" id="${k}N" min="0" max="${mx}" step="0.01"></div></div>`).join('');
-  $('taxes').innerHTML=TX.map(([k,l])=>`<div class="field"><label for="${k}N">${l}</label><input class="inp" type="number" id="${k}N" min="0" max="100" step="0.01"></div>`).join('');
-  PR.concat(TX).forEach(([k,,mx])=>{
-    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));save();render()};
-    $(k+'N').oninput=e=>set(e.target.value);
-    $(k+'N').onblur=()=>{$(k+'N').value=S[k]};
-    if($(k+'R'))$(k+'R').oninput=e=>set(e.target.value)});
-
-  function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-  function setOpen(o){document.body.classList.toggle('open',o);$('drawer').setAttribute('aria-hidden',!o);$('openBtn').setAttribute('aria-expanded',o);if(o)$('pCode').focus()}
-  $('openBtn').onclick=()=>setOpen(true);
-  $('closeBtn').onclick=()=>setOpen(false);
-  $('scrim').onclick=()=>setOpen(false);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false)});
-  $('tb').onclick=e=>{
-    const d=e.target.closest('[data-del]');
-    const ed=e.target.closest('[data-edit]');
-    if(ed){startEdit(+ed.dataset.edit);return}
-    if(d){endEdit();S.products.splice(+d.dataset.del,1);if(S.sel>=S.products.length)S.sel=S.products.length-1;save();render();return}
-    const tr=e.target.closest('tr[data-i]');if(tr){S.sel=+tr.dataset.i;save();render()}};
-  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Dados restaurados (o cadastro importado foi mantido)')};
-
-  /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
-  async function loadRemote(){
-    /* No Apps Script: o cadastro vem da planilha privada, só depois de o servidor conferir o e-mail */
-    if(window.google&&google.script&&google.script.run){
-      google.script.run.withSuccessHandler(r=>{if(r&&r.length)importRows(r,'planilha privada · Google',true)}).withFailureHandler(()=>{}).catalogo();
-      return}
-    if(location.protocol==='file:')return;
-    try{
-      let rows=null,nm='';
-      const rc=await fetch('produtos.csv',{cache:'no-cache'});
-      if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
-        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
-      else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
-        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer());nm='produtos.xlsx'}}
-      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true)
-    }catch(e){}
-  }
-  loadRemote();
-  render();
-})();
-</script>
-
-</body>
-</html>
+    <h2>Produto</h2>
+    <div class="field">
+      <label>Código</label>
