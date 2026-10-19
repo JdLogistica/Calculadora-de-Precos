@@ -465,4 +465,25 @@ table.det tr.b td{font-weight:700}
 
   /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
   async function loadRemote(){
-    /* No Apps Script: o cadastro vem da planilh
+    /* No Apps Script: o cadastro vem da planilha privada, só depois de o servidor conferir o e-mail */
+    if(window.google&&google.script&&google.script.run){
+      google.script.run.withSuccessHandler(r=>{if(r&&r.length)importRows(r,'planilha privada · Google',true)}).withFailureHandler(()=>{}).catalogo();
+      return}
+    if(location.protocol==='file:')return;
+    try{
+      let rows=null,nm='';
+      const rc=await fetch('produtos.csv',{cache:'no-cache'});
+      if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
+        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
+      else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
+        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer());nm='produtos.xlsx'}}
+      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true)
+    }catch(e){}
+  }
+  loadRemote();
+  render();
+})();
+</script>
+
+</body>
+</html>
