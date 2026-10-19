@@ -112,6 +112,9 @@ table.det tr.b td{font-weight:700}
 .ed:hover{background:var(--t1);color:var(--t7)}
 .cancel{width:100%;margin-top:8px;border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:10px;font-weight:600}
 .cancel:hover{background:var(--t1)}
+.lim{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:4px 10px;font-size:12px;font-weight:600}
+.lim:hover{background:var(--t1)}
+.lim.conf{background:#fbe5e0;color:var(--red);border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -149,6 +152,7 @@ table.det tr.b td{font-weight:700}
     <div class="field"><label for="pQty">Quantidade vendida</label><input class="inp" id="pQty" type="number" min="0" step="1" inputmode="numeric"></div>
     <button class="add" id="addBtn" type="button">Incluir dados</button>
     <button class="cancel" id="cancelBtn" type="button" hidden>Cancelar edição</button>
+    <button class="cancel" id="clearBtn" type="button">Limpar campos</button>
 
     <h2>Parâmetros de entrada</h2>
     <div id="params"></div>
@@ -176,7 +180,7 @@ table.det tr.b td{font-weight:700}
   </section>
 
   <section class="card" style="margin-top:12px">
-    <h3>Simulação por produto <span class="leg">Clique em uma linha para ver o cálculo completo</span></h3>
+    <h3>Simulação por produto <span class="leg">Clique em uma linha para ver o cálculo completo</span><button class="lim" id="clearTable" type="button">Limpar tabela</button></h3>
     <div class="tw"><table id="mainT">
       <thead><tr><th>Código</th><th>Produto</th><th>Custo</th><th>Preço atual</th><th>Preço sugerido</th><th>Marketplace (sug.)</th><th>MC atual</th><th>Preço c/ desconto</th><th>Faturamento atual</th><th>Diferença</th><th></th></tr></thead>
       <tbody id="tb"></tbody>
@@ -194,7 +198,7 @@ table.det tr.b td{font-weight:700}
 (function(){
   const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1';
   const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,
-    products:[{code:'626',name:'RUN BACARDI',cost:1.8241667,current:6.9,qty:200}]};
+    products:[]};
   const PR=[['mc','Margem de contribuição desejada (%)',100],['mkt','Taxa do marketplace (%)',50],['desc','Desconto simulado (%)',50]];
   const TX=[['csll','CSLL + IR'],['pis','PIS'],['cofins','COFINS'],['icms','ICMS'],['cartao','Cartão'],['comissao','Comissão']];
   const $=id=>document.getElementById(id), clone=o=>JSON.parse(JSON.stringify(o));
@@ -342,6 +346,15 @@ table.det tr.b td{font-weight:700}
     editIdx=-1;['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');
     $('hint').textContent='';$('addBtn').textContent='Incluir dados';$('cancelBtn').hidden=true;$('pTitle').textContent='Produto'}
   $('cancelBtn').onclick=endEdit;
+  $('clearBtn').onclick=()=>{endEdit();closeSug();auto=false;$('pCode').focus()};
+  let clrT=null;
+  $('clearTable').onclick=()=>{
+    const b=$('clearTable');
+    if(!clrT){b.textContent='Confirmar limpeza?';b.classList.add('conf');
+      clrT=setTimeout(()=>{clrT=null;b.textContent='Limpar tabela';b.classList.remove('conf')},3500);return}
+    clearTimeout(clrT);clrT=null;b.textContent='Limpar tabela';b.classList.remove('conf');
+    endEdit();closeSug();auto=false;S.products=[];S.sel=0;save();render();
+    toast('Tabela limpa. Inclua novos produtos para começar de novo.')};
   $('addBtn').onclick=()=>{
     const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=num($('pCost').value),cur=num($('pCur').value),qty=parseInt($('pQty').value,10);
     if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
@@ -448,29 +461,8 @@ table.det tr.b td{font-weight:700}
     if(ed){startEdit(+ed.dataset.edit);return}
     if(d){endEdit();S.products.splice(+d.dataset.del,1);if(S.sel>=S.products.length)S.sel=S.products.length-1;save();render();return}
     const tr=e.target.closest('tr[data-i]');if(tr){S.sel=+tr.dataset.i;save();render()}};
-  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Dados restaurados (o cadastro importado foi mantido)')};
+  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Parâmetros restaurados e tabela limpa (o cadastro importado foi mantido)')};
 
   /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
   async function loadRemote(){
-    /* No Apps Script: o cadastro vem da planilha privada, só depois de o servidor conferir o e-mail */
-    if(window.google&&google.script&&google.script.run){
-      google.script.run.withSuccessHandler(r=>{if(r&&r.length)importRows(r,'planilha privada · Google',true)}).withFailureHandler(()=>{}).catalogo();
-      return}
-    if(location.protocol==='file:')return;
-    try{
-      let rows=null,nm='';
-      const rc=await fetch('produtos.csv',{cache:'no-cache'});
-      if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
-        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
-      else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
-        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer());nm='produtos.xlsx'}}
-      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true)
-    }catch(e){}
-  }
-  loadRemote();
-  render();
-})();
-</script>
-
-</body>
-</html>
+    /* No Apps Script: o cadastro vem da planilh
