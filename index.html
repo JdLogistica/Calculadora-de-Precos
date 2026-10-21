@@ -125,11 +125,19 @@ table.det tr.b td{font-weight:700}
     Produto e parâmetros
   </button>
   <h1>Simulador de Precificação<span class="sub">Calculadora de preço de venda</span></h1>
-  <button class="tbtn" id="impBtn" type="button">Importar dados</button>
+  <button class="tbtn" id="impBtn" type="button" title="Selecionar um arquivo salvo neste computador">Importar Excel/CSV</button>
   <button class="tbtn" id="updBtn" type="button">Atualizar dados</button>
   <button class="tbtn" id="resetBtn" type="button">Restaurar</button>
   <input type="file" id="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 </header>
+<div style="max-width:1500px;margin:10px auto 0;padding:0 clamp(12px,3vw,28px);">
+  <div style="background:#fff;border:1px solid var(--line);border-left:4px solid var(--t6);border-radius:4px;padding:10px 14px;color:var(--muted);font-size:12px;">
+    <strong style="color:var(--t9);">Importação do seu computador:</strong>
+    clique em <strong>Importar Excel/CSV</strong> e selecione um arquivo .xlsx ou .csv salvo no seu notebook.
+    O arquivo é lido diretamente no navegador; não precisa entrar no Google nem enviar o arquivo para um servidor.
+    Para CSV, use colunas de código, descrição, preço e/ou custo.
+  </div>
+</div>
 
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Campos editáveis" aria-hidden="true">
@@ -246,7 +254,7 @@ table.det tr.b td{font-weight:700}
   function importText(t,name){importRows(parseCSV(t),name)}
   function importRows(rows,name,remote){
     if(!rows.length){if(!remote)toast('Arquivo vazio.');return}
-    const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
+    const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto','codigodebarras','ean'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto','descricaodoproduto','nome do produto'],p:['preco','prec o','precoatual','precovenda','valor','price','precounitario','precodevenda','preco de venda'],k:['custo','precocusto','cost','customedio','custounitario','custo unitario','custo do produto']};
     let ix={},start=-1;
     for(let r=0;r<Math.min(10,rows.length)&&start<0;r++){
       const h=rows[r].map(x=>norm(x).replace(/[^a-z]/g,''));
@@ -300,7 +308,7 @@ table.det tr.b td{font-weight:700}
       else{let t=new TextDecoder('utf-8').decode(buf);
         if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);
         importText(t,f.name)}
-    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv.')}
+    }catch(err){console.error('Falha na importação:',err);toast('Não foi possível ler. Use .xlsx ou .csv (não .xls antigo).')}
     e.target.value=''};
 
   /* ---------- Código → descrição / Descrição → busca ---------- */
