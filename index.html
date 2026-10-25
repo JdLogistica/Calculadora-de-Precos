@@ -332,7 +332,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       if(!eng.length){if(!remote)toast('Nenhum item encontrado na aba ENGEN CARDAPIO.');return}
       const mm=tabs&&tabs.length?mesclar(eng,tabs):{items:eng,info:null},lista=mm.items;
       C={items:lista,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
-      if(!remote){toast(lista.length+' itens importados'+(mm.info?' ('+eng.length+' da Matriz + '+mm.info.extras+' das abas dos itens)':' da aba ENGEN CARDAPIO')+(REMOTE?' (somente nesta sessão)':''));if(SB&&EMP)enviarParaBanco(lista)}
+      if(!remote){toast(lista.length+' itens importados'+(mm.info?' ('+mm.info.casados+' de '+eng.length+' da Matriz com custo real das abas dos itens'+(mm.info.extras?' + '+mm.info.extras+' itens extras':'')+')'+(mm.info.casados<eng.length?'. Atenção: nos demais o custo foi estimado; importe a planilha completa':''):' da aba ENGEN CARDAPIO. Atenção: o arquivo não tem as abas dos itens, então o custo foi estimado')+(REMOTE?' (somente nesta sessão)':''));if(SB&&EMP)enviarParaBanco(lista)}
       return}
     const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
     let ix={},start=-1;
@@ -453,7 +453,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   function fill(i){$('pCode').value=i.c;$('pDesc').value=i.d;$('pCur').value=i.p||'';$('pCost').value=i.k||'';auto=true;
     curPar=i.par?Object.assign({},i.par):null;
     const q=$('pQty');if(i.qt>0&&(!q.value.trim()||q.value===lastQ)){q.value=i.qt;lastQ=String(i.qt)}
-    $('hint').textContent=(i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.')+(curPar?' Parâmetros do item: margem '+fp1(curPar.mc)+' · ICMS '+fp1(curPar.icms)+'.':'')}
+    $('hint').textContent=(i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.')+(curPar?' Parâmetros do item: margem '+fp1(curPar.mc)+' · ICMS '+fp1(curPar.icms)+'.':(i.q?' Custo estimado (importado sem as abas dos itens): importe a planilha completa para trazer o custo real.':''))}
   $('pCode').oninput=()=>{const v=$('pCode').value,i=byCode.get(key(v));
     if(i&&v.trim())fill(i);
     else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false;curPar=null}
