@@ -307,13 +307,14 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     end();return rows}
 
   function importText(t,name){importRows(parseCSV(t),name)}
-  function importRows(rows,name,remote){
+  function importRows(rows,name,remote,tabs){
     if(!rows.length){if(!remote)toast('Arquivo vazio.');return}
     const eng=parseEngen(rows);
     if(eng){
       if(!eng.length){if(!remote)toast('Nenhum item encontrado na aba ENGEN CARDAPIO.');return}
-      C={items:eng,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
-      if(!remote){toast(eng.length+' itens importados da aba ENGEN CARDAPIO'+(REMOTE?' (somente nesta sessão)':''));if(SB&&EMP)enviarParaBanco(eng)}
+      const mm=tabs&&tabs.length?mesclar(eng,tabs):{items:eng,info:null},lista=mm.items;
+      C={items:lista,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
+      if(!remote){toast(lista.length+' itens importados'+(mm.info?' ('+eng.length+' da Matriz + '+mm.info.extras+' das abas dos itens)':' da aba ENGEN CARDAPIO')+(REMOTE?' (somente nesta sessão)':''));if(SB&&EMP)enviarParaBanco(lista)}
       return}
     const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
     let ix={},start=-1;
@@ -333,7 +334,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   }
   const unesc=s=>s.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g,(m,g)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"}[g]||String.fromCodePoint(g[1]==='x'?parseInt(g.slice(2),16):parseInt(g.slice(1),10))));
   const txt=x=>[...x.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m=>unesc(m[1])).join('');
-  async function readXlsx(buf,aba){
+  async function zipOpen(buf){
     const u=new Uint8Array(buf),dv=new DataView(buf);
     let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
     if(e<0)throw new Error('zip');
@@ -348,6 +349,9 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       return new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()};
     const ss=[],sx=await get('xl/sharedStrings.xml');
     if(sx)for(const m of sx.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g))ss.push(txt(m[1]));
+    return {files,get,ss}}
+  async function readXlsx(buf,aba){
+    const {files,get,ss}=await zipOpen(buf);
     let path=null;
     if(aba){const wbx=await get('xl/workbook.xml'),rel=await get('xl/_rels/workbook.xml.rels');
       if(wbx&&rel){
@@ -370,11 +374,54 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       for(let i=0;i<r.length;i++)if(r[i]===undefined)r[i]='';
       if(r.some(x=>String(x).trim()))rows.push(r)}
     return rows}
+  /* Abas individuais dos itens (custo real, impostos e margem de cada item, quantidade vendida) */
+  async function readAbasItens(buf){
+    const {get,ss}=await zipOpen(buf),wbx=await get('xl/workbook.xml'),rel=await get('xl/_rels/workbook.xml.rels'),out=[];
+    if(!wbx||!rel)return out;
+    const rels={};[...rel.matchAll(/<Relationship\b[^>]*>/g)].forEach(m=>{rels[(m[0].match(/\bId="([^"]*)"/)||[])[1]]=(m[0].match(/\bTarget="([^"]*)"/)||[])[1]});
+    for(const m of wbx.matchAll(/<sheet\b[^>]*>/g)){
+      const nome=unesc((m[0].match(/\bname="([^"]*)"/)||[])[1]||''),tt=rels[(m[0].match(/\br:id="([^"]*)"/)||[])[1]];
+      if(!tt||norm(nome)==='engen cardapio')continue;
+      let xml=await get(tt.startsWith('/')?tt.slice(1):'xl/'+tt);if(!xml)continue;
+      const cut=xml.search(/<row\b[^>]*\br="33"/);if(cut>0)xml=xml.slice(0,cut);
+      const cel={};
+      for(const cm of xml.matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){
+        const ref=cm[1].match(/\br="([A-Z]+\d+)"/);if(!ref)continue;
+        const t=(cm[1].match(/\bt="(\w+)"/)||[])[1],v=(cm[2]||'').match(/<v>([\s\S]*?)<\/v>/);let val=v?unesc(v[1]):'';
+        if(t==='s')val=ss[+val]||'';else if(t==='inlineStr')val=txt(cm[2]||'');
+        cel[ref[1]]=val}
+      if(!Object.keys(cel).some(k=>/^[A-Z]+1$/.test(k)&&/calculadora/.test(norm(cel[k])))||!String(cel.A5||'').trim())continue;
+      const rate=r=>{const n=num(cel['E'+r]);return isNaN(n)?0:+(n*100).toFixed(4)},val=r=>{const n=num(cel['F'+r]);return isNaN(n)?0:n};
+      out.push({ab:nome,c:String(cel.A5).trim(),d:String(cel.B5||'').trim(),k:val(5),p:val(13),ct:val(12),qt:num(cel.E31)||0,
+        par:{csll:rate(6),pis:rate(7),cofins:rate(8),icms:rate(9),cartao:rate(10),comissao:rate(11),mc:rate(17)}})}
+    return out}
+  function derivar(it){const r=calc({code:it.c,name:it.d,cost:it.k,current:it.p,qty:0,par:it.par});
+    it.ct=r.ct;it.mcp=r.mcp;it.ps=r.sug;it.pm=it.pb==='S'?r.mktS:r.mktA;it.mka=r.mk;it.mks=r.mks;return it}
+  /* Junta a matriz (ENGEN CARDAPIO) com os dados exatos da aba de cada item */
+  function mesclar(eng,tabs){
+    const by=new Map(),usadas=new Set(),info={casados:0,divergentes:0,extras:0};
+    tabs.forEach(t=>{const k=key(t.c);if(!by.has(k))by.set(k,[]);by.get(k).push(t)});
+    const items=eng.map(it=>{
+      const L=by.get(key(it.c))||[];if(!L.length)return it;
+      const livre=L.filter(x=>!usadas.has(x)),pool=livre.length?livre:L;
+      let t=pool.find(x=>it.ct!=null&&Math.abs(x.ct-it.ct)<0.02&&Math.abs(x.p-(it.p||0))<0.02),exato=!!t;
+      if(!t)t=pool.find(x=>norm(x.ab).endsWith(norm(it.d)));
+      if(!t)t=pool.slice().sort((x,y)=>Math.abs(x.ct-(it.ct||0))-Math.abs(y.ct-(it.ct||0)))[0];
+      usadas.add(t);info.casados++;if(!exato)info.divergentes++;
+      /* Matriz: valores exatamente como na ENGEN CARDAPIO. Calculadora: custo real, impostos, margem e quantidade da aba do item */
+      const vazio=it.ct==null||!(it.p>0),m=Object.assign({},it,{k:t.k,p:vazio?t.p:it.p,par:t.par,qt:t.qt}),r=calc({code:m.c,name:m.d,cost:m.k,current:m.p,qty:0,par:m.par});
+      /* o preço marketplace de cada item pode ser calculado sobre o preço atual (A) ou sobre o sugerido (S) */
+      m.pb=it.pm!=null&&Math.abs(it.pm-r.mktS)<0.01&&Math.abs(it.pm-r.mktA)>=0.01?'S':'A';
+      return vazio?derivar(m):m});
+    const cods=new Set(items.map(i=>key(i.c)));
+    tabs.forEach(t=>{const k=key(t.c);if(usadas.has(t)||cods.has(k))return;cods.add(k);info.extras++;
+      items.push(derivar({c:t.c,d:t.d||t.c,p:t.p,k:t.k,q:null,cat:'',par:t.par,qt:t.qt}))});
+    return {items,info}}
   $('impBtn').onclick=()=>$('file').click();
   $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{
       const buf=await f.arrayBuffer(),b=new Uint8Array(buf,0,2);
-      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b))importRows(await readXlsx(buf,'ENGEN CARDAPIO'),f.name);
+      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b)){const rows=await readXlsx(buf,'ENGEN CARDAPIO');let tabs=[];try{tabs=await readAbasItens(buf)}catch(e){}importRows(rows,f.name,false,tabs)}
       else{let t=new TextDecoder('utf-8').decode(buf);
         if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);
         importText(t,f.name)}
@@ -383,11 +430,15 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 
   /* ---------- Código → descrição / Descrição → busca ---------- */
   let auto=false;
+  let curPar=null,lastQ='';
+  const fp1=v=>String(+(+v).toFixed(2)).replace('.',',')+'%';
   function fill(i){$('pCode').value=i.c;$('pDesc').value=i.d;$('pCur').value=i.p||'';$('pCost').value=i.k||'';auto=true;
-    $('hint').textContent=i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.'}
+    curPar=i.par?Object.assign({},i.par):null;
+    const q=$('pQty');if(i.qt>0&&(!q.value.trim()||q.value===lastQ)){q.value=i.qt;lastQ=String(i.qt)}
+    $('hint').textContent=(i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.')+(curPar?' Parâmetros do item: margem '+fp1(curPar.mc)+' · ICMS '+fp1(curPar.icms)+'.':'')}
   $('pCode').oninput=()=>{const v=$('pCode').value,i=byCode.get(key(v));
     if(i&&v.trim())fill(i);
-    else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false}
+    else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false;curPar=null}
       $('hint').textContent=C.items.length&&v.trim()&&!C.items.some(x=>String(x.c).startsWith(v.trim())||key(x.c).startsWith(key(v)))?'Código não encontrado no cadastro. Preencha manualmente.':''}};
   const AC=[];
   let quiet=false;
@@ -419,18 +470,18 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   const uniq=a=>{const s=new Set();return a.filter(i=>{const k=key(i.c);if(s.has(k))return false;s.add(k);return true})};
   const byNum=(x,y)=>String(x.c).localeCompare(String(y.c),undefined,{numeric:true});
   setupAC('pCode','sugC',v=>uniq(C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v)))).sort(byNum).slice(0,300),()=>uniq(C.items).sort(byNum).slice(0,300));
-  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return uniq(C.items.filter(i=>tk.every(t=>i.n.includes(t)))).slice(0,300)},()=>uniq(C.items).sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),()=>{auto=false});
+  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return uniq(C.items.filter(i=>tk.every(t=>i.n.includes(t)))).slice(0,300)},()=>uniq(C.items).sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),()=>{auto=false;curPar=null});
 
   let editIdx=-1;
   function startEdit(i){
     const p=S.products[i];if(!p)return;
-    editIdx=i;S.sel=i;auto=false;closeSug();
+    editIdx=i;S.sel=i;auto=false;closeSug();curPar=p.par?Object.assign({},p.par):null;
     $('pCode').value=p.code;$('pDesc').value=p.name;$('pCost').value=p.cost;$('pCur').value=p.current;$('pQty').value=p.qty;
     $('hint').textContent='Altere os campos e clique em Salvar alterações.';
     $('addBtn').textContent='Salvar alterações';$('cancelBtn').hidden=false;$('pTitle').textContent='Editar produto';
     render();setOpen(true)}
   function endEdit(){
-    editIdx=-1;['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');
+    editIdx=-1;curPar=null;lastQ='';['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');
     $('hint').textContent='';$('addBtn').textContent='Incluir dados';$('cancelBtn').hidden=true;$('pTitle').textContent='Produto'}
   $('cancelBtn').onclick=endEdit;
   $('clearBtn').onclick=()=>{endEdit();closeSug();auto=false;fq($('pCode'))};
@@ -445,15 +496,15 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('addBtn').onclick=()=>{
     const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=num($('pCost').value),cur=num($('pCur').value),qty=parseInt($('pQty').value,10);
     if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
-    if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]={code,name,cost,current:cur,qty};S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');atualizarBase(S.products[S.sel]);return}
-    S.products.push({code,name,cost,current:cur,qty});S.sel=S.products.length-1;save();render();
-    ['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();fq($('pCode'));
+    if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]=Object.assign({code,name,cost,current:cur,qty},curPar?{par:curPar}:{});S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');atualizarBase(S.products[S.sel]);return}
+    S.products.push(Object.assign({code,name,cost,current:cur,qty},curPar?{par:curPar}:{}));S.sel=S.products.length-1;save();render();
+    curPar=null;lastQ='';['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();fq($('pCode'));
     toast('Dados incluídos');atualizarBase(S.products[S.sel]);
   };
 
   /* ---------- Cálculos (mesmas fórmulas da aba BEBIDAS QUENTES) ---------- */
   function calc(p){
-    const a=k=>(S[k]||0)/100, tx=a('csll')+a('pis')+a('cofins')+a('icms')+a('cartao')+a('comissao');
+    const pp=p.par||{},a=k=>((pp[k]!=null?pp[k]:S[k])||0)/100, tx=a('csll')+a('pis')+a('cofins')+a('icms')+a('cartao')+a('comissao');
     const cost=p.cost,pr=p.current,den=1-(tx+a('mc')),r={p,cost,pr,tx,den};
     r.ct=cost+tx*pr;r.mc=pr-r.ct;r.mcp=pr?r.mc/pr:0;r.mk=cost?pr/cost:0;
     r.sug=den>0?cost/den:0;r.mcs=r.sug-(cost+tx*r.sug);r.mks=cost?r.sug/cost:0;
@@ -464,7 +515,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     return r}
 
   function lines(r){
-    const a=k=>(S[k]||0)/100,m=a('mkt'),q=r.p.qty+' un.';
+    const pp=r.p.par||{},a=k=>((pp[k]!=null?pp[k]:S[k])||0)/100,m=a('mkt'),q=r.p.qty+' un.';
     const L=[['#','Custos e impostos sobre o preço atual'],['Custo',r.pr?r.cost/r.pr:0,r.cost]];
     TX.forEach(([k,n])=>L.push([n,a(k),a(k)*r.pr]));
     L.push(['Custo total',r.pr?r.ct/r.pr:0,r.ct,'b'],['Preço atual',null,r.pr,'b'],['Margem de contribuição atual',r.mcp,r.mc],['Markup multiplicador',null,r.mk,'n'],
@@ -518,11 +569,11 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   function atualizarBase(p){
     const k=key(p.code);if(!k)return;
     const its=C.items.filter(i=>key(i.c)===k);if(!its.length)return;
-    const r=calc({code:p.code,name:p.name,cost:p.cost,current:p.current,qty:0});
+    const r=calc({code:p.code,name:p.name,cost:p.cost,current:p.current,qty:0,par:p.par});
     let mudou=false;
     its.forEach(it=>{
       if(Math.abs((it.p||0)-p.current)<1e-9&&Math.abs((it.k||0)-p.cost)<1e-9&&(it.d||'')===p.name)return;
-      Object.assign(it,{d:p.name||it.d,p:p.current,k:p.cost,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
+      Object.assign(it,{d:p.name||it.d,p:p.current,k:p.cost,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
     if(!mudou)return;
     if(!REMOTE)saveCat();
     render();
@@ -559,7 +610,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     if(S.sel<0)S.sel=0;
     const s=rows[S.sel];
     PR.concat(TX).forEach(([k])=>{const n=$(k+'N'),r=$(k+'R');if(document.activeElement!==n)n.value=S[k];if(r)r.value=S[k]});
-    const den=1-((S.csll+S.pis+S.cofins+S.icms+S.cartao+S.comissao+S.mc)/100);
+    const den=s?s.den:1-((S.csll+S.pis+S.cofins+S.icms+S.cartao+S.comissao+S.mc)/100);
     $('warn').style.display=den>0?'none':'block';
 
     $('strip').innerHTML=(s?`<b>${esc(s.p.code||'—')} · ${esc(s.p.name)}</b> &nbsp;produto em análise`:'Nenhum produto em análise')+
@@ -585,7 +636,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('params').innerHTML=PR.map(([k,l,mx])=>`<div class="field"><label for="${k}N">${l}</label><div class="rng"><input type="range" id="${k}R" min="0" max="${mx}" step="0.5"><input class="inp" type="number" id="${k}N" min="0" max="${mx}" step="0.01"></div></div>`).join('');
   $('taxes').innerHTML=TX.map(([k,l])=>`<div class="field"><label for="${k}N">${l}</label><input class="inp" type="number" id="${k}N" min="0" max="100" step="0.01"></div>`).join('');
   PR.concat(TX).forEach(([k,,mx])=>{
-    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));save();render()};
+    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));S.products.forEach(p=>{if(p.par)delete p.par[k]});if(curPar)delete curPar[k];save();render()};
     $(k+'N').oninput=e=>set(e.target.value);
     $(k+'N').onblur=()=>{$(k+'N').value=S[k]};
     if($(k+'R'))$(k+'R').oninput=e=>set(e.target.value)});
@@ -612,13 +663,13 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       return}
     if(location.protocol==='file:')return;
     try{
-      let rows=null,nm='';
+      let rows=null,nm='',tabsR=[];
       const rc=await fetch('produtos.csv',{cache:'no-cache'});
       if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
         if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
       else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
-        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer(),'ENGEN CARDAPIO');nm='produtos.xlsx'}}
-      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true)
+        if(rx.ok){const bx=await rx.arrayBuffer();rows=await readXlsx(bx,'ENGEN CARDAPIO');try{tabsR=await readAbasItens(bx)}catch(e){}nm='produtos.xlsx'}}
+      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true,tabsR)
     }catch(e){}
   }
   if(!SUPABASE_URL)loadRemote();
@@ -670,10 +721,10 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   async function recarregarOnline(avisar){
     try{
       const prods=await lerTudo('produtos','id,codigo,descricao,preco,preco_sugerido,preco_marketplace,categoria,quadrante,ordem','ordem'),custo=new Map();
-      try{(await lerTudo('custos','produto_id,custo,custo_total,mc_atual,markup_atual,markup_sugerido','produto_id')).forEach(c=>custo.set(c.produto_id,c))}catch(e){}
+      try{(await lerTudo('custos','produto_id,custo,custo_total,mc_atual,markup_atual,markup_sugerido,parametros,qtd_vendida','produto_id')).forEach(c=>custo.set(c.produto_id,c))}catch(e){}
       const nn=v=>v==null?null:Number(v);
       C={items:prods.map(p=>{const c=custo.get(p.id)||{};
-        return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido)}}),
+        return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
         name:'banco online · '+EMP.nome};
       index();REMOTE=true;render();
       if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
@@ -684,7 +735,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     if(!confirm('Substituir a base online ('+C.items.length+' itens atuais) por '+items.length+' itens deste arquivo? Isso vale para todos os usuários da empresa.'))return;
     try{
       const itens=items.filter(i=>String(i.c).trim()).map((i,n)=>({codigo:String(i.c).trim(),descricao:i.d||String(i.c),preco:i.p||0,preco_sugerido:i.ps==null?null:i.ps,preco_marketplace:i.pm==null?null:i.pm,
-        categoria:i.cat||null,quadrante:i.q||null,ordem:n+1,custo:i.k>0?i.k:null,custo_total:i.ct==null?null:i.ct,mc_atual:i.mcp==null?null:i.mcp,markup_atual:i.mka==null?null:i.mka,markup_sugerido:i.mks==null?null:i.mks}));
+        categoria:i.cat||null,quadrante:i.q||null,ordem:n+1,custo:i.k>0?i.k:null,custo_total:i.ct==null?null:i.ct,mc_atual:i.mcp==null?null:i.mcp,markup_atual:i.mka==null?null:i.mka,markup_sugerido:i.mks==null?null:i.mks,parametros:i.par?Object.assign({pb:i.pb||'A'},i.par):null,qtd_vendida:i.qt>0?i.qt:null}));
       const r=await SB.rpc('substituir_base',{p_empresa:EMP.id,p_itens:itens});
       if(r.error)throw r.error;
       await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'substituiu_base',detalhe:{qtd:itens.length}});
@@ -695,7 +746,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     try{
       for(const it of its){
         const a=await SB.from('produtos').update({descricao:it.d,preco:it.p,preco_sugerido:it.ps,preco_marketplace:it.pm}).eq('id',it.id);if(a.error)throw a.error;
-        const b=await SB.from('custos').upsert({produto_id:it.id,empresa_id:EMP.id,custo:it.k,custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks},{onConflict:'produto_id'});if(b.error)throw b.error}
+        const b=await SB.from('custos').upsert({produto_id:it.id,empresa_id:EMP.id,custo:it.k,custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks,parametros:it.par?Object.assign({pb:it.pb||'A'},it.par):null,qtd_vendida:it.qt>0?it.qt:null},{onConflict:'produto_id'});if(b.error)throw b.error}
       await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
     }catch(e){toast('A base online não foi atualizada. Confira a sua permissão de edição.')}}
   async function entrou(ses){
