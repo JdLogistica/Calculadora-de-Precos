@@ -128,9 +128,32 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .tabs{display:flex;gap:4px;padding:10px clamp(12px,3vw,28px) 0}
 .tab{border:1px solid var(--line);border-bottom:0;background:#fff;color:var(--t9);padding:8px 20px;border-radius:4px 4px 0 0;font-weight:600}
 .tab.on{background:var(--t9);color:#fff;border-color:var(--t9)}
+.mx-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.mx-tools .btns{display:flex;gap:6px}
+.mx-tools button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 12px;font-weight:600;font-size:12px;cursor:pointer}
+.mx-tools button:hover{background:var(--t1)}
+.mx{margin-top:12px;overflow:hidden;--qc:#143b46;--qt:#fff;--ql:#eef3f4}
+.mx.q-FOCO{--qc:#2e7d32;--qt:#fff;--ql:#e8f3e8}
+.mx.q-ALAVANCA{--qc:#f2c811;--qt:#2b2400;--ql:#fdf6d3}
+.mx.q-FREIO{--qc:#c62828;--qt:#fff;--ql:#fbe7e7}
+.mx.q-DESAFIADOR{--qc:#1565a8;--qt:#fff;--ql:#e3eef8}
+.mx-h{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;background:var(--qc);color:var(--qt);cursor:pointer;flex-wrap:wrap}
+.mx-h:focus-visible{outline:3px solid #000;outline-offset:-3px}
+.mx-h .nm{font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.mx-h .lg{font-size:12px;font-weight:600;opacity:.92}
+.mx-h .chips{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.mx-h .chip{background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.q-ALAVANCA .mx-h .chip{background:rgba(0,0,0,.12)}
+.mx-h .chv{width:10px;height:10px;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg);margin:-4px 2px 0 4px;transition:transform .15s}
+.mx-h[aria-expanded=false] .chv{transform:rotate(-45deg);margin:0 2px 0 4px}
+.mx thead th{background:var(--ql);color:var(--ink);font-weight:700;border-bottom:2px solid var(--qc)}
+.mx tfoot td{background:var(--ql);font-weight:700;border-top:2px solid var(--qc)}
+.mx tfoot td small{display:block;font-weight:500;font-size:10px;color:var(--muted)}
+.mx tfoot td:first-child{text-align:left}
+@media(max-width:700px){.mx-h .chips{margin-left:0}}
 .mt{width:auto;min-width:0}
-.mt th,.mt td{padding:8px 12px;text-align:center;white-space:nowrap}
-.mt td:nth-child(2){text-align:left;white-space:normal;min-width:200px}
+.mt th,.mt td{padding:8px 9px;text-align:center;white-space:nowrap}
+.mt td:nth-child(2){text-align:left;white-space:normal;min-width:170px}
 </style>
 </head>
 <body>
@@ -227,7 +250,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   </section>
 </main>
 <main id="vMat" hidden>
-  <div class="strip" id="matStrip"></div>
+  <div class="strip mx-tools"><span id="matStrip"></span><span class="btns"><button type="button" id="mxOpen">Expandir tudo</button><button type="button" id="mxClose">Recolher tudo</button></span></div>
   <div id="matBody"></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
@@ -513,10 +536,20 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     const Q=[['FOCO','Foco','Vendas ↑ · Margem ↑'],['ALAVANCA','Alavanca','Vendas ↑ · Margem ↓'],['FREIO','Freio','Vendas ↓ · Margem ↓'],['DESAFIADOR','Desafiador','Vendas ↓ · Margem ↑']];
     const its=C.items.filter(i=>i.q),R=v=>v==null?'—':brl(v),P=v=>v==null?'—':fp(v),N=v=>v==null?'—':n2(v);
     $('matStrip').innerHTML=its.length?'Matriz com <b>'+its.length+'</b> itens &nbsp;|&nbsp; '+Q.map(a=>a[1]+': '+its.filter(i=>i.q===a[0]).length).join(' · '):'Nenhum item classificado. Importe a planilha com a aba ENGEN CARDAPIO.';
+    const sum=(L,f)=>{const v=L.map(f).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((x,y)=>x+y,0):null},avg=(L,f)=>{const v=L.map(f).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((x,y)=>x+y,0)/v.length:null};
     $('matBody').innerHTML=Q.map(a=>{
       const L=its.filter(i=>i.q===a[0]);if(!L.length)return '';
-      return '<section class="card" style="margin-top:12px"><h3>'+a[1]+' <span class="leg">'+a[2]+' · '+L.length+' itens</span></h3><div class="tw"><table class="mt"><thead><tr><th>Cód.</th><th>Item</th><th>Custo</th><th>MC atual</th><th>Preço atual</th><th>Preço sugerido</th><th>Preço marketplace</th><th>Markup atual</th><th>Markup sugerido</th><th>Categoria</th></tr></thead><tbody>'+
-        L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(i.p>0?i.p:null)+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+'</tbody></table></div></section>'}).join('')}
+      const open=matOpen[a[0]]!==false,id='mx_'+a[0],pa=i=>i.p>0?i.p:null;
+      const tCt=sum(L,i=>i.ct),tP=sum(L,pa),tS=sum(L,i=>i.ps),tM=sum(L,i=>i.pm);
+      return '<section class="card mx q-'+a[0]+'"><button type="button" class="mx-h" data-q="'+a[0]+'" aria-expanded="'+open+'" aria-controls="'+id+'"><span class="nm">'+a[1]+'</span><span class="lg">('+a[2]+')</span>'+
+        '<span class="chips"><span class="chip">'+L.length+' itens</span><span class="chip">Custo '+R(tCt)+'</span><span class="chip">Preço atual '+R(tP)+'</span><span class="chip">Sugerido '+R(tS)+'</span></span><span class="chv" aria-hidden="true"></span></button>'+
+        '<div class="tw" id="'+id+'"'+(open?'':' hidden')+'><table class="mt"><thead><tr><th>Cód.</th><th>Item</th><th>Custo</th><th>MC atual</th><th>Preço atual</th><th>Preço sugerido</th><th>Preço marketplace</th><th>Markup atual</th><th>Markup sugerido</th><th>Categoria</th></tr></thead><tbody>'+
+        L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(pa(i))+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+
+        '</tbody><tfoot><tr><td colspan="2">Total · '+L.length+' itens</td><td>'+R(tCt)+'</td><td>'+P(avg(L,i=>i.mcp))+'<small>média</small></td><td>'+R(tP)+'</td><td>'+R(tS)+'</td><td>'+R(tM)+'</td><td>'+N(avg(L,i=>i.mka))+'<small>média</small></td><td>'+N(avg(L,i=>i.mks))+'<small>média</small></td><td></td></tr></tfoot></table></div></section>'}).join('')}
+  const MATKEY='blueprintMatrizAberta_v1';let matOpen={};try{matOpen=JSON.parse(localStorage.getItem(MATKEY))||{}}catch(e){}
+  function matSet(q,v){if(q==null)['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=v);else matOpen[q]=v;try{localStorage.setItem(MATKEY,JSON.stringify(matOpen))}catch(e){}renderMatriz()}
+  $('matBody').onclick=e=>{const h=e.target.closest('.mx-h');if(h)matSet(h.dataset.q,h.getAttribute('aria-expanded')!=='true')};
+  $('mxOpen').onclick=()=>matSet(null,true);$('mxClose').onclick=()=>matSet(null,false);
 
   /* ---------- Render ---------- */
   function render(){
