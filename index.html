@@ -129,7 +129,9 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .tab{border:1px solid var(--line);border-bottom:0;background:#fff;color:var(--t9);padding:8px 20px;border-radius:4px 4px 0 0;font-weight:600}
 .tab.on{background:var(--t9);color:#fff;border-color:var(--t9)}
 .mx-filter{margin-top:12px;padding:12px 14px;display:grid;grid-template-columns:minmax(120px,1fr) minmax(200px,2fr) auto;gap:12px;align-items:end}
+.mx-filter[hidden]{display:none}
 .mx-filter .field{margin:0}
+.mx-tools button[aria-expanded=true],.mx-tools button[aria-expanded=true]:hover{background:var(--t9);color:#fff;border-color:var(--t9)}
 .mx-filter .fbtn{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;height:38px}
 .mx-filter .fbtn:hover{background:var(--t1)}
 @media(max-width:700px){.mx-filter{grid-template-columns:1fr}}
@@ -255,8 +257,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   </section>
 </main>
 <main id="vMat" hidden>
-  <div class="strip mx-tools"><span id="matStrip"></span><span class="btns"><button type="button" id="mxOpen">Expandir tudo</button><button type="button" id="mxClose">Recolher tudo</button></span></div>
-  <div class="card mx-filter" id="mxFilter">
+  <div class="strip mx-tools"><span id="matStrip"></span><span class="btns"><button type="button" id="mxFiltBtn" aria-expanded="false" aria-controls="mxFilter">Filtrar produtos</button><button type="button" id="mxOpen">Expandir tudo</button><button type="button" id="mxClose">Recolher tudo</button></span></div>
+  <div class="card mx-filter" id="mxFilter" hidden>
     <div class="field ac"><label for="fCode">Código</label><input class="inp" id="fCode" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sugFC" placeholder="Digite o código"><ul class="sug" id="sugFC" role="listbox" hidden></ul></div>
     <div class="field ac"><label for="fDesc">Descrição</label><input class="inp" id="fDesc" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sugFD" placeholder="Digite para buscar na matriz"><ul class="sug" id="sugFD" role="listbox" hidden></ul></div>
     <button type="button" class="fbtn" id="fClear">Limpar filtro</button>
@@ -619,13 +621,20 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   function mfAplicar(){const at=mfAtivo();
     if(at&&!matBak){matBak=Object.assign({},matOpen);['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=true)}
     else if(!at&&matBak){matOpen=matBak;matBak=null}
-    renderMatriz()}
+    renderMatriz();if($('mxFilter').hidden)mfPainel(false,false)}
   const MI=()=>C.items.filter(i=>i.q);
   setupAC('fCode','sugFC',v=>uniq(MI().filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v)))).sort(byNum).slice(0,300),()=>uniq(MI()).sort(byNum).slice(0,300),
     ()=>{mf={code:$('fCode').value,desc:$('fDesc').value,exact:false};mfAplicar()},mfPick);
   setupAC('fDesc','sugFD',v=>{const tk=norm(v).split(/\s+/);return uniq(MI().filter(i=>tk.every(t=>i.n.includes(t)))).slice(0,300)},()=>uniq(MI()).sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),
     ()=>{mf={code:$('fCode').value,desc:$('fDesc').value,exact:false};mfAplicar()},mfPick);
   function mfPick(i){$('fCode').value=i.c;$('fDesc').value=i.d;mf={code:String(i.c),desc:'',exact:true};closeSug();mfAplicar()}
+  const FKEY='blueprintMatrizFiltro_v1';
+  function mfPainel(abrir,salvar){const p=$('mxFilter'),b=$('mxFiltBtn');p.hidden=!abrir;b.setAttribute('aria-expanded',abrir);
+    b.textContent=abrir?'Ocultar filtro':(mfAtivo()?'Filtrar produtos (ativo)':'Filtrar produtos');
+    if(salvar){try{localStorage.setItem(FKEY,abrir?'1':'0')}catch(e){}}
+    if(abrir&&salvar)setTimeout(()=>{try{$('fCode').focus({preventScroll:true})}catch(e){}},0);else if(!abrir)closeSug()}
+  $('mxFiltBtn').onclick=()=>mfPainel($('mxFilter').hidden,true);
+  let fAberto=false;try{fAberto=localStorage.getItem(FKEY)==='1'}catch(e){}mfPainel(fAberto,false);
   $('fClear').onclick=()=>{$('fCode').value='';$('fDesc').value='';mf={code:'',desc:'',exact:false};closeSug();mfAplicar()};
   $('mxOpen').onclick=()=>matSet(null,true);$('mxClose').onclick=()=>matSet(null,false);
 
