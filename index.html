@@ -128,6 +128,11 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .tabs{display:flex;gap:4px;padding:10px clamp(12px,3vw,28px) 0}
 .tab{border:1px solid var(--line);border-bottom:0;background:#fff;color:var(--t9);padding:8px 20px;border-radius:4px 4px 0 0;font-weight:600}
 .tab.on{background:var(--t9);color:#fff;border-color:var(--t9)}
+.mx-filter{margin-top:12px;padding:12px 14px;display:grid;grid-template-columns:minmax(120px,1fr) minmax(200px,2fr) auto;gap:12px;align-items:end}
+.mx-filter .field{margin:0}
+.mx-filter .fbtn{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;height:38px}
+.mx-filter .fbtn:hover{background:var(--t1)}
+@media(max-width:700px){.mx-filter{grid-template-columns:1fr}}
 .mx-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .mx-tools .btns{display:flex;gap:6px}
 .mx-tools button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 12px;font-weight:600;font-size:12px;cursor:pointer}
@@ -251,6 +256,11 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 </main>
 <main id="vMat" hidden>
   <div class="strip mx-tools"><span id="matStrip"></span><span class="btns"><button type="button" id="mxOpen">Expandir tudo</button><button type="button" id="mxClose">Recolher tudo</button></span></div>
+  <div class="card mx-filter" id="mxFilter">
+    <div class="field ac"><label for="fCode">Código</label><input class="inp" id="fCode" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sugFC" placeholder="Digite o código"><ul class="sug" id="sugFC" role="listbox" hidden></ul></div>
+    <div class="field ac"><label for="fDesc">Descrição</label><input class="inp" id="fDesc" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sugFD" placeholder="Digite para buscar na matriz"><ul class="sug" id="sugFD" role="listbox" hidden></ul></div>
+    <button type="button" class="fbtn" id="fClear">Limpar filtro</button>
+  </div>
   <div id="matBody"></div>
 </main>
 <div class="toast" id="toast" role="status"></div>
@@ -445,7 +455,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   const fq=el=>{quiet=true;el.focus();quiet=false};
   function closeSug(){AC.forEach(a=>a.close())}
   function pick(i){fill(i);closeSug();$('pQty').focus()}
-  function setupAC(inp,list,match,all,onType){
+  function setupAC(inp,list,match,all,onType,onPick){
     const I=$(inp),L=$(list),a={hi:-1,res:[]};
     a.close=()=>{L.hidden=true;I.setAttribute('aria-expanded','false');a.hi=-1};
     const mark=()=>{[...L.children].forEach((li,n)=>li.classList.toggle('on',n===a.hi));const on=L.children[a.hi];if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'})};
@@ -463,9 +473,9 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       if(L.hidden)return;
       if(e.key==='ArrowDown'){e.preventDefault();a.hi=Math.min(a.res.length-1,a.hi+1);mark()}
       else if(e.key==='ArrowUp'){e.preventDefault();a.hi=Math.max(0,a.hi-1);mark()}
-      else if(e.key==='Enter'&&a.res[a.hi]){e.preventDefault();pick(a.res[a.hi])}
+      else if(e.key==='Enter'&&a.res[a.hi]){e.preventDefault();(onPick||pick)(a.res[a.hi])}
       else if(e.key==='Escape'){e.stopPropagation();a.close()}});
-    L.onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();pick(a.res[+li.dataset.n])}};
+    L.onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();(onPick||pick)(a.res[+li.dataset.n])}};
     AC.push(a)}
   const uniq=a=>{const s=new Set();return a.filter(i=>{const k=key(i.c);if(s.has(k))return false;s.add(k);return true})};
   const byNum=(x,y)=>String(x.c).localeCompare(String(y.c),undefined,{numeric:true});
@@ -585,8 +595,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   /* ---------- Aba Matriz ---------- */
   function renderMatriz(){
     const Q=[['FOCO','Foco','Vendas ↑ · Margem ↑'],['ALAVANCA','Alavanca','Vendas ↑ · Margem ↓'],['FREIO','Freio','Vendas ↓ · Margem ↓'],['DESAFIADOR','Desafiador','Vendas ↓ · Margem ↑']];
-    const its=C.items.filter(i=>i.q),R=v=>v==null?'—':brl(v),P=v=>v==null?'—':fp(v),N=v=>v==null?'—':n2(v);
-    $('matStrip').innerHTML=its.length?'Matriz com <b>'+its.length+'</b> itens &nbsp;|&nbsp; '+Q.map(a=>a[1]+': '+its.filter(i=>i.q===a[0]).length).join(' · '):'Nenhum item classificado. Importe a planilha com a aba ENGEN CARDAPIO.';
+    const todos=C.items.filter(i=>i.q),its=todos.filter(mfOk),R=v=>v==null?'—':brl(v),P=v=>v==null?'—':fp(v),N=v=>v==null?'—':n2(v);
+    $('matStrip').innerHTML=!todos.length?'Nenhum item classificado. Importe a planilha com a aba ENGEN CARDAPIO.':its.length?'Matriz com <b>'+its.length+'</b>'+(mfAtivo()?' de '+todos.length:'')+' itens &nbsp;|&nbsp; '+Q.map(a=>a[1]+': '+its.filter(i=>i.q===a[0]).length).join(' · '):'Nenhum item encontrado para o filtro.  <b>Limpar filtro</b> para ver todos.';
     const sum=(L,f)=>{const v=L.map(f).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((x,y)=>x+y,0):null},avg=(L,f)=>{const v=L.map(f).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((x,y)=>x+y,0)/v.length:null};
     $('matBody').innerHTML=Q.map(a=>{
       const L=its.filter(i=>i.q===a[0]);if(!L.length)return '';
@@ -598,8 +608,25 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
         L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(pa(i))+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+
         '</tbody><tfoot><tr><td colspan="2">Total · '+L.length+' itens</td><td>'+R(tCt)+'</td><td>'+P(avg(L,i=>i.mcp))+'<small>média</small></td><td>'+R(tP)+'</td><td>'+R(tS)+'</td><td>'+R(tM)+'</td><td>'+N(avg(L,i=>i.mka))+'<small>média</small></td><td>'+N(avg(L,i=>i.mks))+'<small>média</small></td><td></td></tr></tfoot></table></div></section>'}).join('')}
   const MATKEY='blueprintMatrizAberta_v1';let matOpen={};try{matOpen=JSON.parse(localStorage.getItem(MATKEY))||{}}catch(e){}
-  function matSet(q,v){if(q==null)['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=v);else matOpen[q]=v;try{localStorage.setItem(MATKEY,JSON.stringify(matOpen))}catch(e){}renderMatriz()}
+  function matSet(q,v){if(q==null)['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=v);else matOpen[q]=v;if(!matBak){try{localStorage.setItem(MATKEY,JSON.stringify(matOpen))}catch(e){}}renderMatriz()}
   $('matBody').onclick=e=>{const h=e.target.closest('.mx-h');if(h)matSet(h.dataset.q,h.getAttribute('aria-expanded')!=='true')};
+  /* Filtro da Matriz (mesmo formato do painel: código e descrição com lista de sugestões) */
+  let mf={code:'',desc:'',exact:false},matBak=null;
+  const mfAtivo=()=>!!(mf.code.trim()||mf.desc.trim());
+  function mfOk(i){if(mf.exact)return key(i.c)===key(mf.code);
+    const c=mf.code.trim(),d=norm(mf.desc).split(/\s+/).filter(Boolean);
+    return(!c||String(i.c).startsWith(c)||key(i.c).startsWith(key(c)))&&d.every(t=>i.n.includes(t))}
+  function mfAplicar(){const at=mfAtivo();
+    if(at&&!matBak){matBak=Object.assign({},matOpen);['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=true)}
+    else if(!at&&matBak){matOpen=matBak;matBak=null}
+    renderMatriz()}
+  const MI=()=>C.items.filter(i=>i.q);
+  setupAC('fCode','sugFC',v=>uniq(MI().filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v)))).sort(byNum).slice(0,300),()=>uniq(MI()).sort(byNum).slice(0,300),
+    ()=>{mf={code:$('fCode').value,desc:$('fDesc').value,exact:false};mfAplicar()},mfPick);
+  setupAC('fDesc','sugFD',v=>{const tk=norm(v).split(/\s+/);return uniq(MI().filter(i=>tk.every(t=>i.n.includes(t)))).slice(0,300)},()=>uniq(MI()).sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),
+    ()=>{mf={code:$('fCode').value,desc:$('fDesc').value,exact:false};mfAplicar()},mfPick);
+  function mfPick(i){$('fCode').value=i.c;$('fDesc').value=i.d;mf={code:String(i.c),desc:'',exact:true};closeSug();mfAplicar()}
+  $('fClear').onclick=()=>{$('fCode').value='';$('fDesc').value='';mf={code:'',desc:'',exact:false};closeSug();mfAplicar()};
   $('mxOpen').onclick=()=>matSet(null,true);$('mxClose').onclick=()=>matSet(null,false);
 
   /* ---------- Render ---------- */
