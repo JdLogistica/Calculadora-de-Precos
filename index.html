@@ -115,30 +115,55 @@ table.det tr.b td{font-weight:700}
 .lim{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:4px 10px;font-size:12px;font-weight:600}
 .lim:hover{background:var(--t1)}
 .lim.conf{background:#fbe5e0;color:var(--red);border-color:var(--red)}
+.auth{min-height:100vh;display:grid;place-items:center;padding:24px}
+.auth[hidden]{display:none}
+.authbox{background:#fff;border:1px solid var(--line);border-top:4px solid var(--t6);border-radius:4px;padding:28px 30px;width:min(380px,100%);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.authbox h2{margin:0 0 6px;color:var(--t9);font-size:18px}
+.authbox p{margin:0 0 16px;color:var(--muted);font-size:13px}
+.authbox .lnk{background:none;border:0;color:var(--t6);padding:12px 0 0;font-size:13px;text-decoration:underline}
+#authMsg{min-height:18px;margin-top:10px;font-size:13px;color:var(--red)}
+#authMsg.ok{color:var(--t7)}
+.tbtn[hidden]{display:none}
+body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
+.tabs{display:flex;gap:4px;padding:10px clamp(12px,3vw,28px) 0}
+.tab{border:1px solid var(--line);border-bottom:0;background:#fff;color:var(--t9);padding:8px 20px;border-radius:4px 4px 0 0;font-weight:600}
+.tab.on{background:var(--t9);color:#fff;border-color:var(--t9)}
+.mt{width:auto;min-width:0}
+.mt th,.mt td{padding:8px 12px;text-align:center;white-space:nowrap}
+.mt td:nth-child(2){text-align:left;white-space:normal;min-width:200px}
 </style>
 </head>
 <body>
 
+<div class="auth" id="auth" hidden><div class="authbox">
+  <h2>Simulador de Precificação</h2>
+  <form id="fLogin"><p>Entre com o seu e-mail e senha.</p>
+    <div class="field"><label for="aEmail">E-mail</label><input class="inp" id="aEmail" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="aSenha">Senha</label><input class="inp" id="aSenha" type="password" autocomplete="current-password" required></div>
+    <button class="add" type="submit">Entrar</button>
+    <button class="lnk" id="aEsqueci" type="button">Esqueci minha senha</button>
+  </form>
+  <form id="fSenha" hidden><p>Defina uma senha para acessar o sistema.</p>
+    <div class="field"><label for="nSenha">Nova senha (mínimo 8 caracteres)</label><input class="inp" id="nSenha" type="password" autocomplete="new-password" required></div>
+    <button class="add" type="submit">Salvar senha</button>
+  </form>
+  <div id="fSem" hidden><p>O seu usuário ainda não foi liberado para nenhuma empresa. Fale com o administrador.</p><button class="add" id="semSair" type="button">Sair</button></div>
+  <div id="authMsg" aria-live="polite"></div>
+</div></div>
 <header class="bar">
   <button class="tbtn y" id="openBtn" type="button" aria-controls="drawer" aria-expanded="false">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.6" fill="currentColor"/><circle cx="11" cy="8" r="1.6" fill="currentColor"/><circle cx="7" cy="12" r="1.6" fill="currentColor"/></svg>
     Produto e parâmetros
   </button>
   <h1>Simulador de Precificação<span class="sub">Calculadora de preço de venda</span></h1>
-  <button class="tbtn" id="impBtn" type="button" title="Selecionar um arquivo salvo neste computador">Importar Excel/CSV</button>
+  <button class="tbtn" id="impBtn" type="button">Importar dados</button>
   <button class="tbtn" id="updBtn" type="button">Atualizar dados</button>
+  <button class="tbtn" id="outBtn" type="button" hidden>Sair</button>
   <button class="tbtn" id="resetBtn" type="button">Restaurar</button>
   <input type="file" id="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 </header>
-<div style="max-width:1500px;margin:10px auto 0;padding:0 clamp(12px,3vw,28px);">
-  <div style="background:#fff;border:1px solid var(--line);border-left:4px solid var(--t6);border-radius:4px;padding:10px 14px;color:var(--muted);font-size:12px;">
-    <strong style="color:var(--t9);">Importação do seu computador:</strong>
-    clique em <strong>Importar Excel/CSV</strong> e selecione um arquivo .xlsx ou .csv salvo no seu notebook.
-    O arquivo é lido diretamente no navegador; não precisa entrar no Google nem enviar o arquivo para um servidor.
-    Para CSV, use colunas de código, descrição, preço e/ou custo.
-  </div>
-</div>
 
+<nav class="tabs" id="tabs"><button class="tab on" data-v="vSim" type="button">Simulador</button><button class="tab" data-v="vMat" type="button">Matriz</button></nav>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Campos editáveis" aria-hidden="true">
   <div class="d-head">
@@ -171,7 +196,7 @@ table.det tr.b td{font-weight:700}
   </div>
 </aside>
 
-<main>
+<main id="vSim">
   <div class="strip" id="strip"></div>
   <section class="kpis" id="kpis"></section>
 
@@ -201,6 +226,10 @@ table.det tr.b td{font-weight:700}
     <div class="tw"><table class="det"><tbody id="det"></tbody></table></div>
   </section>
 </main>
+<main id="vMat" hidden>
+  <div class="strip" id="matStrip"></div>
+  <div id="matBody"></div>
+</main>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -209,6 +238,9 @@ table.det tr.b td{font-weight:700}
   const GOOGLE_CLIENT_ID='';  /* cole aqui o ID do cliente OAuth do Google (termina em .apps.googleusercontent.com) */
   const PLANILHA_ID='17gE1cYdedvmByskT4vhsCeFnKM_-4kwTbvziFIWxfxg';
   const ABA_PRODUTOS='Produtos';
+  const SUPABASE_URL='';       /* Project URL do Supabase (https://xxxx.supabase.co) */
+  const SUPABASE_ANON_KEY='';  /* chave anon public do Supabase (nunca a service_role) */
+  let SB=null,EMP=null;
   /* ============================================================================ */
   const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1';
   const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,
@@ -224,7 +256,7 @@ table.det tr.b td{font-weight:700}
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const key=c=>String(c).trim().replace(/^0+(?=.)/,'');
-  const num=v=>{let s=String(v==null?'':v).replace(/[^\d.,-]/g,'');if(!s)return NaN;
+  const num=v=>{const t0=String(v==null?'':v).trim();if(/^-?\d+(\.\d+)?[eE][-+]?\d+$/.test(t0))return parseFloat(t0);let s=t0.replace(/[^\d.,-]/g,'');if(!s)return NaN;
     if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');
     return parseFloat(s)};
 
@@ -233,7 +265,7 @@ table.det tr.b td{font-weight:700}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
   function loadCat(){try{const c=JSON.parse(localStorage.getItem(CK));if(c&&Array.isArray(c.items))return c}catch(e){}return {items:[],name:''}}
   function saveCat(){try{localStorage.setItem(CK,JSON.stringify(C))}catch(e){toast('Cadastro grande demais para salvar no navegador; importe de novo ao abrir.')}}
-  function index(){C.items.forEach(i=>i.n=norm(i.c+' '+i.d));byCode=new Map(C.items.map(i=>[key(i.c),i]))}
+  function index(){byCode=new Map();C.items.forEach(i=>{i.n=norm(i.c+' '+i.d);const k=key(i.c);if(!byCode.has(k))byCode.set(k,i)})}
   index();
 
   /* ---------- Importação CSV ---------- */
@@ -254,7 +286,13 @@ table.det tr.b td{font-weight:700}
   function importText(t,name){importRows(parseCSV(t),name)}
   function importRows(rows,name,remote){
     if(!rows.length){if(!remote)toast('Arquivo vazio.');return}
-    const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto','codigodebarras','ean'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto','descricaodoproduto','nome do produto'],p:['preco','prec o','precoatual','precovenda','valor','price','precounitario','precodevenda','preco de venda'],k:['custo','precocusto','cost','customedio','custounitario','custo unitario','custo do produto']};
+    const eng=parseEngen(rows);
+    if(eng){
+      if(!eng.length){if(!remote)toast('Nenhum item encontrado na aba ENGEN CARDAPIO.');return}
+      C={items:eng,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
+      if(!remote){toast(eng.length+' itens importados da aba ENGEN CARDAPIO'+(REMOTE?' (somente nesta sessão)':''));if(SB&&EMP)enviarParaBanco(eng)}
+      return}
+    const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
     let ix={},start=-1;
     for(let r=0;r<Math.min(10,rows.length)&&start<0;r++){
       const h=rows[r].map(x=>norm(x).replace(/[^a-z]/g,''));
@@ -267,11 +305,12 @@ table.det tr.b td{font-weight:700}
       items.push({c,d,p:ix.p>=0?(num(r[ix.p])||0):0,k:ix.k>=0?(num(r[ix.k])||0):0})}
     if(!items.length){if(!remote)toast('Nenhum produto encontrado. Colunas esperadas: código, descrição, preço.');return}
     C={items,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
-    if(!remote)toast(items.length+' produtos importados'+(REMOTE?' (somente nesta sessão; ao reabrir, vale o arquivo do GitHub)':''));
+    if(!remote)toast(items.length+' produtos importados'+(REMOTE?' (somente nesta sessão)':''));
+    if(!remote&&SB&&EMP)enviarParaBanco(items);
   }
   const unesc=s=>s.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g,(m,g)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"}[g]||String.fromCodePoint(g[1]==='x'?parseInt(g.slice(2),16):parseInt(g.slice(1),10))));
   const txt=x=>[...x.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m=>unesc(m[1])).join('');
-  async function readXlsx(buf){
+  async function readXlsx(buf,aba){
     const u=new Uint8Array(buf),dv=new DataView(buf);
     let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
     if(e<0)throw new Error('zip');
@@ -286,7 +325,15 @@ table.det tr.b td{font-weight:700}
       return new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()};
     const ss=[],sx=await get('xl/sharedStrings.xml');
     if(sx)for(const m of sx.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g))ss.push(txt(m[1]));
-    const path=files['xl/worksheets/sheet1.xml']?'xl/worksheets/sheet1.xml':Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort()[0];
+    let path=null;
+    if(aba){const wbx=await get('xl/workbook.xml'),rel=await get('xl/_rels/workbook.xml.rels');
+      if(wbx&&rel){
+        const tg=[...wbx.matchAll(/<sheet\b[^>]*>/g)].map(x=>x[0]).find(t=>norm(unesc((t.match(/\bname="([^"]*)"/)||[])[1]||''))===norm(aba));
+        const rid=tg&&(tg.match(/\br:id="([^"]*)"/)||[])[1];
+        const rl=rid&&[...rel.matchAll(/<Relationship\b[^>]*>/g)].map(x=>x[0]).find(t=>(t.match(/\bId="([^"]*)"/)||[])[1]===rid);
+        const tt=rl&&(rl.match(/\bTarget="([^"]*)"/)||[])[1];
+        if(tt)path=tt.startsWith('/')?tt.slice(1):'xl/'+tt}}
+    if(!path||!files[path])path=files['xl/worksheets/sheet1.xml']?'xl/worksheets/sheet1.xml':Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort()[0];
     const xml=await get(path);if(!xml)throw new Error('sheet');
     const rows=[];
     for(const rm of xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)){
@@ -304,11 +351,11 @@ table.det tr.b td{font-weight:700}
   $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{
       const buf=await f.arrayBuffer(),b=new Uint8Array(buf,0,2);
-      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b))importRows(await readXlsx(buf),f.name);
+      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b))importRows(await readXlsx(buf,'ENGEN CARDAPIO'),f.name);
       else{let t=new TextDecoder('utf-8').decode(buf);
         if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);
         importText(t,f.name)}
-    }catch(err){console.error('Falha na importação:',err);toast('Não foi possível ler. Use .xlsx ou .csv (não .xls antigo).')}
+    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv.')}
     e.target.value=''};
 
   /* ---------- Código → descrição / Descrição → busca ---------- */
@@ -346,9 +393,10 @@ table.det tr.b td{font-weight:700}
       else if(e.key==='Escape'){e.stopPropagation();a.close()}});
     L.onmousedown=e=>{const li=e.target.closest('li[data-n]');if(li){e.preventDefault();pick(a.res[+li.dataset.n])}};
     AC.push(a)}
+  const uniq=a=>{const s=new Set();return a.filter(i=>{const k=key(i.c);if(s.has(k))return false;s.add(k);return true})};
   const byNum=(x,y)=>String(x.c).localeCompare(String(y.c),undefined,{numeric:true});
-  setupAC('pCode','sugC',v=>C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v))).sort(byNum).slice(0,300),()=>C.items.slice().sort(byNum).slice(0,300));
-  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return C.items.filter(i=>tk.every(t=>i.n.includes(t))).slice(0,300)},()=>C.items.slice().sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),()=>{auto=false});
+  setupAC('pCode','sugC',v=>uniq(C.items.filter(i=>String(i.c).startsWith(v)||key(i.c).startsWith(key(v)))).sort(byNum).slice(0,300),()=>uniq(C.items).sort(byNum).slice(0,300));
+  setupAC('pDesc','sug',v=>{const tk=norm(v).split(/\s+/);return uniq(C.items.filter(i=>tk.every(t=>i.n.includes(t)))).slice(0,300)},()=>uniq(C.items).sort((x,y)=>String(x.d).localeCompare(String(y.d),'pt-BR')).slice(0,300),()=>{auto=false});
 
   let editIdx=-1;
   function startEdit(i){
@@ -374,10 +422,10 @@ table.det tr.b td{font-weight:700}
   $('addBtn').onclick=()=>{
     const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=num($('pCost').value),cur=num($('pCur').value),qty=parseInt($('pQty').value,10);
     if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
-    if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]={code,name,cost,current:cur,qty};S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');return}
+    if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]={code,name,cost,current:cur,qty};S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');atualizarBase(S.products[S.sel]);return}
     S.products.push({code,name,cost,current:cur,qty});S.sel=S.products.length-1;save();render();
     ['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();fq($('pCode'));
-    toast('Dados incluídos');
+    toast('Dados incluídos');atualizarBase(S.products[S.sel]);
   };
 
   /* ---------- Cálculos (mesmas fórmulas da aba BEBIDAS QUENTES) ---------- */
@@ -427,8 +475,52 @@ table.det tr.b td{font-weight:700}
       g+=`<text x="${cx}" y="${H-16}" text-anchor="middle" font-size="11" fill="#1c2b30">${esc(t)}</text>`});
     el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`}
 
+  /* ---------- Base ENGEN CARDAPIO (4 blocos: Foco, Alavanca, Freio, Desafiador) ---------- */
+  function parseEngen(rows){
+    const h=(rows[0]||[]).map(x=>norm(x).replace(/[^a-z]/g,'')),Q=['foco','alavanca','freio','desafiador'],out=[];
+    let achou=false;
+    const tx=((S.csll||0)+(S.pis||0)+(S.cofins||0)+(S.icms||0)+(S.cartao||0)+(S.comissao||0))/100;
+    h.forEach((x,j)=>{
+      if(x!=='cod'&&x!=='codigo')return;
+      const q=Q.find(n=>(h[j+1]||'').startsWith(n));if(!q)return;achou=true;
+      for(let r=1;r<rows.length;r++){
+        const w=rows[r],c=String(w[j]||'').trim();if(!c)continue;
+        const ce=c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        const d=String(w[j+1]||'').replace(/^'/,'').replace(/'?!(?:A1)?$/,'').replace(/'$/,'').trim().replace(new RegExp('^0*'+ce+'\\s+'),'');
+        const p=num(w[j+4])||0,ct=num(w[j+2]),v=k=>{const n=num(w[j+k]);return isNaN(n)?null:n};
+        out.push({c,d:d||c,p,k:isNaN(ct)?0:Math.max(0,+(ct-tx*p).toFixed(4)),q:q.toUpperCase(),cat:String(w[j+9]||'').trim(),ct:isNaN(ct)?null:ct,mcp:v(3),ps:v(5),pm:v(6),mka:v(7),mks:v(8)})}});
+    return achou?out:null}
+
+  /* Ao atualizar um item no simulador, a base (todos os registros com o mesmo código) também é atualizada */
+  function atualizarBase(p){
+    const k=key(p.code);if(!k)return;
+    const its=C.items.filter(i=>key(i.c)===k);if(!its.length)return;
+    const r=calc({code:p.code,name:p.name,cost:p.cost,current:p.current,qty:0});
+    let mudou=false;
+    its.forEach(it=>{
+      if(Math.abs((it.p||0)-p.current)<1e-9&&Math.abs((it.k||0)-p.cost)<1e-9&&(it.d||'')===p.name)return;
+      Object.assign(it,{d:p.name||it.d,p:p.current,k:p.cost,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
+    if(!mudou)return;
+    if(!REMOTE)saveCat();
+    render();
+    if(SB&&EMP){
+      if(pode()){salvarItensNoBanco(its.filter(i=>i.id));toast('Base atualizada para todos: código '+p.code+'.')}
+      else toast('Sem permissão de edição: a base não foi alterada para os outros usuários.')}
+    else toast('Base atualizada: código '+p.code+'.')}
+
+  /* ---------- Aba Matriz ---------- */
+  function renderMatriz(){
+    const Q=[['FOCO','Foco','Vendas ↑ · Margem ↑'],['ALAVANCA','Alavanca','Vendas ↑ · Margem ↓'],['FREIO','Freio','Vendas ↓ · Margem ↓'],['DESAFIADOR','Desafiador','Vendas ↓ · Margem ↑']];
+    const its=C.items.filter(i=>i.q),R=v=>v==null?'—':brl(v),P=v=>v==null?'—':fp(v),N=v=>v==null?'—':n2(v);
+    $('matStrip').innerHTML=its.length?'Matriz com <b>'+its.length+'</b> itens &nbsp;|&nbsp; '+Q.map(a=>a[1]+': '+its.filter(i=>i.q===a[0]).length).join(' · '):'Nenhum item classificado. Importe a planilha com a aba ENGEN CARDAPIO.';
+    $('matBody').innerHTML=Q.map(a=>{
+      const L=its.filter(i=>i.q===a[0]);if(!L.length)return '';
+      return '<section class="card" style="margin-top:12px"><h3>'+a[1]+' <span class="leg">'+a[2]+' · '+L.length+' itens</span></h3><div class="tw"><table class="mt"><thead><tr><th>Cód.</th><th>Item</th><th>Custo</th><th>MC atual</th><th>Preço atual</th><th>Preço sugerido</th><th>Preço marketplace</th><th>Markup atual</th><th>Markup sugerido</th><th>Categoria</th></tr></thead><tbody>'+
+        L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(i.p>0?i.p:null)+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+'</tbody></table></div></section>'}).join('')}
+
   /* ---------- Render ---------- */
   function render(){
+    renderMatriz();
     const rows=S.products.map(calc);
     if(S.sel>=rows.length)S.sel=rows.length-1;
     if(S.sel<0)S.sel=0;
@@ -492,11 +584,11 @@ table.det tr.b td{font-weight:700}
       if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
         if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
       else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
-        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer());nm='produtos.xlsx'}}
+        if(rx.ok){rows=await readXlsx(await rx.arrayBuffer(),'ENGEN CARDAPIO');nm='produtos.xlsx'}}
       if(rows&&rows.length)importRows(rows,nm+' · GitHub',true)
     }catch(e){}
   }
-  loadRemote();
+  if(!SUPABASE_URL)loadRemote();
   /* Atualizar dados: lê de novo a planilha do Google. Só consegue quem tem acesso à planilha. */
   let gisP=null,gTok=null,gExp=0;
   function carregarGIS(){
@@ -519,8 +611,9 @@ table.det tr.b td{font-weight:700}
     return (j.values||[]).map(l=>l.map(x=>x==null?'':String(x)))}
   $('updBtn').addEventListener('pointerdown',()=>{if(!(window.google&&google.script&&google.script.run)&&GOOGLE_CLIENT_ID)carregarGIS().catch(()=>{})});
   $('updBtn').onclick=()=>{
+    if(SB&&EMP){recarregarOnline(true);return}
     const b=$('updBtn'),noApps=!(window.google&&google.script&&google.script.run);
-    if(noApps&&!GOOGLE_CLIENT_ID){toast('Falta configurar o ID do cliente Google no arquivo index.html.');return}
+    if(noApps&&!GOOGLE_CLIENT_ID){toast('A atualização online ainda não foi configurada. Use Importar dados ou fale com o administrador.');return}
     const txt=b.textContent;b.disabled=true;b.textContent='Atualizando…';
     const fim=()=>{b.disabled=false;b.textContent=txt};
     const ok=r=>{fim();
@@ -531,6 +624,84 @@ table.det tr.b td{font-weight:700}
     const ko=e=>{fim();toast(e&&e.perm?'Sem permissão para atualizar: é preciso ter acesso à planilha.':'Não foi possível acessar a planilha. Entre com a conta que tem acesso e tente de novo.')};
     if(noApps)lerPlanilha().then(ok,ko);
     else google.script.run.withSuccessHandler(ok).withFailureHandler(()=>ko({perm:true})).catalogo()};
+  /* ===== LOGIN E BANCO ONLINE (Supabase): quem tem acesso aos dados consulta; editor/admin atualizam ===== */
+  const pode=()=>EMP&&(EMP.papel==='admin'||EMP.papel==='editor');
+  function authMsg(t,ok){const m=$('authMsg');m.textContent=t||'';m.className=ok?'ok':''}
+  function showAuth(f){document.body.classList.remove('ready');$('auth').hidden=false;$('fLogin').hidden=f!=='login';$('fSenha').hidden=f!=='senha';$('fSem').hidden=f!=='sem';if(f!=='login')authMsg('')}
+  function liberar(){$('auth').hidden=true;document.body.classList.add('ready');$('outBtn').hidden=false}
+  async function lerTudo(tab,cols,ord){
+    const out=[];
+    for(let i=0;;i+=1000){const r=await SB.from(tab).select(cols).eq('empresa_id',EMP.id).order(ord).range(i,i+999);
+      if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}
+    return out}
+  async function recarregarOnline(avisar){
+    try{
+      const prods=await lerTudo('produtos','id,codigo,descricao,preco,preco_sugerido,preco_marketplace,categoria,quadrante,ordem','ordem'),custo=new Map();
+      try{(await lerTudo('custos','produto_id,custo,custo_total,mc_atual,markup_atual,markup_sugerido','produto_id')).forEach(c=>custo.set(c.produto_id,c))}catch(e){}
+      const nn=v=>v==null?null:Number(v);
+      C={items:prods.map(p=>{const c=custo.get(p.id)||{};
+        return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido)}}),
+        name:'banco online · '+EMP.nome};
+      index();REMOTE=true;render();
+      if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
+    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.')}}
+  /* Envia a base para o banco: SUBSTITUI a base da empresa (como a planilha ENGEN CARDAPIO, que é a base completa) */
+  async function enviarParaBanco(items){
+    if(!pode())return;
+    if(!confirm('Substituir a base online ('+C.items.length+' itens atuais) por '+items.length+' itens deste arquivo? Isso vale para todos os usuários da empresa.'))return;
+    try{
+      const itens=items.filter(i=>String(i.c).trim()).map((i,n)=>({codigo:String(i.c).trim(),descricao:i.d||String(i.c),preco:i.p||0,preco_sugerido:i.ps==null?null:i.ps,preco_marketplace:i.pm==null?null:i.pm,
+        categoria:i.cat||null,quadrante:i.q||null,ordem:n+1,custo:i.k>0?i.k:null,custo_total:i.ct==null?null:i.ct,mc_atual:i.mcp==null?null:i.mcp,markup_atual:i.mka==null?null:i.mka,markup_sugerido:i.mks==null?null:i.mks}));
+      const r=await SB.rpc('substituir_base',{p_empresa:EMP.id,p_itens:itens});
+      if(r.error)throw r.error;
+      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'substituiu_base',detalhe:{qtd:itens.length}});
+      await recarregarOnline(false);
+      toast(itens.length+' itens enviados: a base foi atualizada para todos.');
+    }catch(e){toast('Não foi possível enviar os dados. Confira se você tem permissão de edição.')}}
+  async function salvarItensNoBanco(its){
+    try{
+      for(const it of its){
+        const a=await SB.from('produtos').update({descricao:it.d,preco:it.p,preco_sugerido:it.ps,preco_marketplace:it.pm}).eq('id',it.id);if(a.error)throw a.error;
+        const b=await SB.from('custos').upsert({produto_id:it.id,empresa_id:EMP.id,custo:it.k,custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks},{onConflict:'produto_id'});if(b.error)throw b.error}
+      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
+    }catch(e){toast('A base online não foi atualizada. Confira a sua permissão de edição.')}}
+  async function entrou(ses){
+    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,empresas(nome)').eq('user_id',ses.user.id);
+    if(r.error){showAuth('login');authMsg('Não foi possível verificar o seu acesso. Tente de novo.');return}
+    if(!r.data||!r.data.length){showAuth('sem');return}
+    const m=r.data[0];EMP={id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||''};
+    liberar();recarregarOnline(false)}
+  async function iniciarLogin(){
+    await new Promise((ok,ko)=>{const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
+      s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
+    SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;showAuth('login')}});
+    const g=await SB.auth.getSession();
+    if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
+    if(g.data.session)entrou(g.data.session);else showAuth('login')}
+  $('fLogin').onsubmit=async e=>{e.preventDefault();authMsg('Entrando…',true);
+    const r=await SB.auth.signInWithPassword({email:$('aEmail').value.trim(),password:$('aSenha').value});
+    if(r.error){authMsg('E-mail ou senha incorretos.');return}
+    $('aSenha').value='';authMsg('');entrou(r.data.session)};
+  $('aEsqueci').onclick=async()=>{const em=$('aEmail').value.trim();
+    if(!em){authMsg('Digite o seu e-mail acima.');return}
+    await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
+    authMsg('Se o e-mail estiver cadastrado, enviamos um link para criar uma nova senha.',true)};
+  $('fSenha').onsubmit=async e=>{e.preventDefault();const a=$('nSenha').value;
+    if(a.length<8){authMsg('Use ao menos 8 caracteres.');return}
+    const r=await SB.auth.updateUser({password:a});
+    if(r.error){authMsg('Não foi possível salvar a senha. Peça um novo link ao administrador.');return}
+    $('nSenha').value='';history.replaceState(null,'',location.pathname+location.search);
+    const g=await SB.auth.getSession();if(g.data.session)entrou(g.data.session);else showAuth('login')};
+  $('outBtn').onclick=async()=>{S.products=[];save();try{localStorage.removeItem(CK)}catch(e){}
+    try{await SB.auth.signOut()}catch(e){}location.reload()};
+  $('semSair').onclick=()=>$('outBtn').onclick();
+  $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
+    ['vSim','vMat'].forEach(id=>{$(id).hidden=id!==b.dataset.v})};
+  if(SUPABASE_URL&&SUPABASE_ANON_KEY)iniciarLogin().catch(()=>{showAuth('login');authMsg('Não foi possível carregar o login. Verifique a conexão.')});
+  else document.body.classList.add('ready');
   render();
 })();
 </script>
