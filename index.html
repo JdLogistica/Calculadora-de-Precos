@@ -590,8 +590,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     const r=calc({code:p.code,name:p.name,cost:p.cost,current:p.current,qty:0,par:p.par});
     let mudou=false;
     its.forEach(it=>{
-      if(Math.abs((it.p||0)-p.current)<1e-9&&Math.abs((it.k||0)-p.cost)<1e-9&&(it.d||'')===p.name)return;
-      Object.assign(it,{d:p.name||it.d,p:p.current,k:p.cost,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
+      if(Math.abs((it.p||0)-p.current)<1e-9&&Math.abs((it.k||0)-p.cost)<1e-9&&(it.d||'')===p.name&&(it.qt||0)===(p.qty||0))return;
+      Object.assign(it,{d:p.name||it.d,p:p.current,k:p.cost,qt:p.qty||0,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
     if(!mudou)return;
     if(!REMOTE)saveCat();
     render();
