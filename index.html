@@ -159,7 +159,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .mx thead th{background:var(--ql);color:var(--ink);font-weight:700;border-bottom:2px solid var(--qc)}
 .mx tfoot td{background:var(--ql);font-weight:700;border-top:2px solid var(--qc)}
 .mx tfoot td small{display:block;font-weight:500;font-size:10px;color:var(--muted)}
-.mx tfoot td:first-child{text-align:left}
+.mx tfoot td,.mx tfoot td:nth-child(2){text-align:center;white-space:nowrap;min-width:0}
 @media(max-width:700px){.mx-h .chips{margin-left:0}}
 .mt{width:auto;min-width:0}
 .mt th,.mt td{padding:8px 9px;text-align:center;white-space:nowrap}
@@ -307,6 +307,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   function loadCat(){try{const c=JSON.parse(localStorage.getItem(CK));if(c&&Array.isArray(c.items))return c}catch(e){}return {items:[],name:''}}
   function saveCat(){try{localStorage.setItem(CK,JSON.stringify(C))}catch(e){toast('Cadastro grande demais para salvar no navegador; importe de novo ao abrir.')}}
   function index(){byCode=new Map();C.items.forEach(i=>{i.n=norm(i.c+' '+i.d);const k=key(i.c);if(!byCode.has(k))byCode.set(k,i)})}
+  (function(){let m=false;C.items.forEach(i=>{if(i.q&&!i.par&&derivEng(i))m=true});if(m)saveCat()})();
   index();
 
   /* ---------- Importação CSV ---------- */
@@ -453,7 +454,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   function fill(i){$('pCode').value=i.c;$('pDesc').value=i.d;$('pCur').value=i.p||'';$('pCost').value=i.k||'';auto=true;
     curPar=i.par?Object.assign({},i.par):null;
     const q=$('pQty');if(i.qt>0&&(!q.value.trim()||q.value===lastQ)){q.value=i.qt;lastQ=String(i.qt)}
-    $('hint').textContent=(i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.')+(curPar?' Parâmetros do item: margem '+fp1(curPar.mc)+' · ICMS '+fp1(curPar.icms)+'.':(i.q?' Custo estimado (importado sem as abas dos itens): importe a planilha completa para trazer o custo real.':''))}
+    $('hint').textContent=(i.k?'Produto encontrado no cadastro.':'Produto encontrado. Informe o custo.')+(curPar?(curPar.tot!=null?' Impostos do item '+fp1(curPar.tot)+(curPar.mc!=null?' · margem '+fp1(curPar.mc):'')+'.':' Parâmetros do item: margem '+fp1(curPar.mc)+' · ICMS '+fp1(curPar.icms)+'.'):(i.q?' Custo estimado (importado sem as abas dos itens): importe a planilha completa para trazer o custo real.':''))}
   $('pCode').oninput=()=>{const v=$('pCode').value,i=byCode.get(key(v));
     if(i&&v.trim())fill(i);
     else{if(auto){['pDesc','pCur','pCost'].forEach(id=>$(id).value='');auto=false;curPar=null}
@@ -522,7 +523,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 
   /* ---------- Cálculos (mesmas fórmulas da aba BEBIDAS QUENTES) ---------- */
   function calc(p){
-    const pp=p.par||{},a=k=>((pp[k]!=null?pp[k]:S[k])||0)/100, tx=a('csll')+a('pis')+a('cofins')+a('icms')+a('cartao')+a('comissao');
+    const pp=p.par||{},a=k=>((pp[k]!=null?pp[k]:S[k])||0)/100, tx=pp.tot!=null?pp.tot/100:a('csll')+a('pis')+a('cofins')+a('icms')+a('cartao')+a('comissao');
     const cost=p.cost,pr=p.current,den=1-(tx+a('mc')),r={p,cost,pr,tx,den};
     r.ct=cost+tx*pr;r.mc=pr-r.ct;r.mcp=pr?r.mc/pr:0;r.mk=cost?pr/cost:0;
     r.sug=den>0?cost/den:0;r.mcs=r.sug-(cost+tx*r.sug);r.mks=cost?r.sug/cost:0;
@@ -535,7 +536,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   function lines(r){
     const pp=r.p.par||{},a=k=>((pp[k]!=null?pp[k]:S[k])||0)/100,m=a('mkt'),q=r.p.qty+' un.';
     const L=[['#','Custos e impostos sobre o preço atual'],['Custo',r.pr?r.cost/r.pr:0,r.cost]];
-    TX.forEach(([k,n])=>L.push([n,a(k),a(k)*r.pr]));
+    if(pp.tot!=null)L.push(['Impostos e taxas do item',pp.tot/100,pp.tot/100*r.pr]);else TX.forEach(([k,n])=>L.push([n,a(k),a(k)*r.pr]));
     L.push(['Custo total',r.pr?r.ct/r.pr:0,r.ct,'b'],['Preço atual',null,r.pr,'b'],['Margem de contribuição atual',r.mcp,r.mc],['Markup multiplicador',null,r.mk,'n'],
       ['#','Preço sugerido'],['Preço sugerido',null,r.sug,'b'],['Divisor: 100% − (impostos + taxas + margem)',r.den,null],['Margem de contribuição desejada',a('mc'),r.mcs],['Markup multiplicador sugerido',null,r.mks,'n'],
       ['#','Marketplace'],['Taxa — base preço atual',m,r.mktA*m],['Preço marketplace — base preço atual',null,r.mktA,'b'],
@@ -568,6 +569,13 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`}
 
   /* ---------- Base ENGEN CARDAPIO (4 blocos: Foco, Alavanca, Freio, Desafiador) ---------- */
+  /* Custo inicial (sem impostos) direto da ENGEN: preço atual ÷ markup atual. Impostos do item = (custo total − custo inicial) ÷ preço. */
+  function derivEng(it){const n=v=>typeof v==='number'&&isFinite(v);
+    if(!(it.p>0&&it.mka>0&&n(it.ct)))return false;
+    const k=it.p/it.mka,tx=(it.ct-k)/it.p;if(tx<-0.001||tx>0.5)return false;
+    const par={csll:0,pis:0,cofins:0,icms:0,cartao:0,comissao:0,tot:+(Math.max(0,tx)*100).toFixed(4)};
+    if(it.ps>0){const mcd=1-Math.max(0,tx)-k/it.ps;if(mcd>0&&mcd<1)par.mc=+(mcd*100).toFixed(4)}
+    it.k=+k.toFixed(4);it.par=par;return true}
   function parseEngen(rows){
     const h=(rows[0]||[]).map(x=>norm(x).replace(/[^a-z]/g,'')),Q=['foco','alavanca','freio','desafiador'],out=[];
     let achou=false;
@@ -581,6 +589,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
         const d=String(w[j+1]||'').replace(/^'/,'').replace(/'?!(?:A1)?$/,'').replace(/'$/,'').trim().replace(new RegExp('^0*'+ce+'\\s+'),'');
         const p=num(w[j+4])||0,ct=num(w[j+2]),v=k=>{const n=num(w[j+k]);return isNaN(n)?null:n};
         out.push({c,d:d||c,p,k:isNaN(ct)?0:Math.max(0,+(ct-tx*p).toFixed(4)),q:q.toUpperCase(),cat:String(w[j+9]||'').trim(),ct:isNaN(ct)?null:ct,mcp:v(3),ps:v(5),pm:v(6),mka:v(7),mks:v(8)})}});
+    out.forEach(derivEng);
     return achou?out:null}
 
   /* Ao atualizar um item no simulador, a base (todos os registros com o mesmo código) também é atualizada */
@@ -609,12 +618,12 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     $('matBody').innerHTML=Q.map(a=>{
       const L=its.filter(i=>i.q===a[0]);if(!L.length)return '';
       const open=matOpen[a[0]]!==false,id='mx_'+a[0],pa=i=>i.p>0?i.p:null;
-      const tCt=sum(L,i=>i.ct),tP=sum(L,pa),tS=sum(L,i=>i.ps),tM=sum(L,i=>i.pm);
+      const tK=sum(L,i=>i.k>0?i.k:null),tCt=sum(L,i=>i.ct),tP=sum(L,pa),tS=sum(L,i=>i.ps),tM=sum(L,i=>i.pm);
       return '<section class="card mx q-'+a[0]+'"><button type="button" class="mx-h" data-q="'+a[0]+'" aria-expanded="'+open+'" aria-controls="'+id+'"><span class="nm">'+a[1]+'</span><span class="lg">('+a[2]+')</span>'+
-        '<span class="chips"><span class="chip">'+L.length+' itens</span><span class="chip">Custo '+R(tCt)+'</span><span class="chip">Preço atual '+R(tP)+'</span><span class="chip">Sugerido '+R(tS)+'</span></span><span class="chv" aria-hidden="true"></span></button>'+
-        '<div class="tw" id="'+id+'"'+(open?'':' hidden')+'><table class="mt"><thead><tr><th>Cód.</th><th>Item</th><th>Custo</th><th>MC atual</th><th>Preço atual</th><th>Preço sugerido</th><th>Preço marketplace</th><th>Markup atual</th><th>Markup sugerido</th><th>Categoria</th></tr></thead><tbody>'+
-        L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(pa(i))+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+
-        '</tbody><tfoot><tr><td colspan="2">Total · '+L.length+' itens</td><td>'+R(tCt)+'</td><td>'+P(avg(L,i=>i.mcp))+'<small>média</small></td><td>'+R(tP)+'</td><td>'+R(tS)+'</td><td>'+R(tM)+'</td><td>'+N(avg(L,i=>i.mka))+'<small>média</small></td><td>'+N(avg(L,i=>i.mks))+'<small>média</small></td><td></td></tr></tfoot></table></div></section>'}).join('')}
+        '<span class="chips"><span class="chip">'+L.length+(L.length===1?' item':' itens')+'</span><span class="chip">Custo total '+R(tCt)+'</span><span class="chip">Preço atual '+R(tP)+'</span><span class="chip">Sugerido '+R(tS)+'</span></span><span class="chv" aria-hidden="true"></span></button>'+
+        '<div class="tw" id="'+id+'"'+(open?'':' hidden')+'><table class="mt"><thead><tr><th>Cód.</th><th>Item</th><th>Custo inicial</th><th>Custo total</th><th>MC atual</th><th>Preço atual</th><th>Preço sugerido</th><th>Preço marketplace</th><th>Markup atual</th><th>Markup sugerido</th><th>Categoria</th></tr></thead><tbody>'+
+        L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.k>0?i.k:null)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(pa(i))+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+
+        '</tbody><tfoot><tr><td colspan="2">Total · '+L.length+(L.length===1?' item':' itens')+'</td><td>'+R(tK)+'</td><td>'+R(tCt)+'</td><td>'+P(avg(L,i=>i.mcp))+'<small>média</small></td><td>'+R(tP)+'</td><td>'+R(tS)+'</td><td>'+R(tM)+'</td><td>'+N(avg(L,i=>i.mka))+'<small>média</small></td><td>'+N(avg(L,i=>i.mks))+'<small>média</small></td><td></td></tr></tfoot></table></div></section>'}).join('')}
   const MATKEY='blueprintMatrizAberta_v1';let matOpen={};try{matOpen=JSON.parse(localStorage.getItem(MATKEY))||{}}catch(e){}
   function matSet(q,v){if(q==null)['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=v);else matOpen[q]=v;if(!matBak){try{localStorage.setItem(MATKEY,JSON.stringify(matOpen))}catch(e){}}renderMatriz()}
   $('matBody').onclick=e=>{const h=e.target.closest('.mx-h');if(h)matSet(h.dataset.q,h.getAttribute('aria-expanded')!=='true')};
@@ -678,7 +687,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('params').innerHTML=PR.map(([k,l,mx])=>`<div class="field"><label for="${k}N">${l}</label><div class="rng"><input type="range" id="${k}R" min="0" max="${mx}" step="0.5"><input class="inp" type="number" id="${k}N" min="0" max="${mx}" step="0.01"></div></div>`).join('');
   $('taxes').innerHTML=TX.map(([k,l])=>`<div class="field"><label for="${k}N">${l}</label><input class="inp" type="number" id="${k}N" min="0" max="100" step="0.01"></div>`).join('');
   PR.concat(TX).forEach(([k,,mx])=>{
-    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));S.products.forEach(p=>{if(p.par)delete p.par[k]});if(curPar)delete curPar[k];save();render()};
+    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));const tx1=TX.some(t=>t[0]===k);S.products.forEach(p=>{if(p.par){delete p.par[k];if(tx1)delete p.par.tot}});if(curPar){delete curPar[k];if(tx1)delete curPar.tot}save();render()};
     $(k+'N').oninput=e=>set(e.target.value);
     $(k+'N').onblur=()=>{$(k+'N').value=S[k]};
     if($(k+'R'))$(k+'R').oninput=e=>set(e.target.value)});
