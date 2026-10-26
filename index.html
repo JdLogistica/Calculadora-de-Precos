@@ -131,6 +131,19 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .tabs{display:flex;gap:4px;padding:10px clamp(12px,3vw,28px) 0}
 .tab{border:1px solid var(--line);border-bottom:0;background:#fff;color:var(--t9);padding:8px 20px;border-radius:4px 4px 0 0;font-weight:600}
 .tab.on{background:var(--t9);color:#fff;border-color:var(--t9)}
+.usr-new{margin-top:12px}
+.usr-new form{padding:14px}
+.usr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px;align-items:end}
+.usr-pw{display:flex;gap:8px}.usr-pw .fbtn{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:0 12px;font-weight:600;font-size:13px;cursor:pointer}
+.usr-chk{display:flex;align-items:center;min-height:38px}.usr-chk label{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--t9)}
+.usr-add{max-width:280px}
+.usr-msg{margin-top:10px;font-size:13px;min-height:18px}.usr-msg.ok{color:#1f7a3a}.usr-msg.er{color:var(--red)}
+.usr-t{min-width:640px}.usr-t td{vertical-align:middle}.usr-t td:first-child{text-align:left}.usr-t select{width:auto;padding:6px 8px}
+.usr-t td:nth-child(2){text-align:center;min-width:0;white-space:nowrap}
+.usr-t .ac{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.usr-t .ac button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer}
+.usr-t .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}.usr-t .ac button.del{color:var(--red)}.usr-t .ac button.conf{background:var(--red);color:#fff;border-color:var(--red)}
+.usr-t .pwr{display:flex;gap:6px;justify-content:center;margin-top:6px}.usr-t .pwr input{max-width:170px;padding:5px 8px}
 .mx-filter{margin-top:12px;padding:12px 14px;display:grid;grid-template-columns:minmax(120px,1fr) minmax(200px,2fr) auto;gap:12px;align-items:end}
 .mx-filter[hidden]{display:none}
 .mx-filter .field{margin:0}
@@ -199,7 +212,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   <input type="file" id="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 </header>
 
-<nav class="tabs" id="tabs"><button class="tab on" data-v="vSim" type="button">Simulador</button><button class="tab" data-v="vMat" type="button">Matriz</button></nav>
+<nav class="tabs" id="tabs"><button class="tab on" data-v="vSim" type="button">Simulador</button><button class="tab" data-v="vMat" type="button">Matriz</button><button class="tab" data-v="vUsr" id="tabUsr" type="button" hidden>Usuários</button></nav>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Campos editáveis" aria-hidden="true">
   <div class="d-head">
@@ -270,6 +283,26 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     <button type="button" class="fbtn" id="fClear">Limpar filtro</button>
   </div>
   <div id="matBody"></div>
+</main>
+<main id="vUsr" hidden>
+  <div class="strip" id="usrStrip">Usuários com acesso ao sistema · somente o administrador vê esta página</div>
+  <section class="card usr-new">
+    <h3>Cadastrar e liberar usuário</h3>
+    <form id="usrForm" autocomplete="off">
+      <div class="usr-grid">
+        <div class="field"><label for="uEmail">E-mail</label><input class="inp" id="uEmail" type="email" autocomplete="off" required placeholder="pessoa@email.com"></div>
+        <div class="field"><label for="uSenha">Senha (mínimo 8 caracteres)</label><div class="usr-pw"><input class="inp" id="uSenha" type="password" autocomplete="new-password" minlength="8" maxlength="72" required><button type="button" class="fbtn" id="uVer" aria-pressed="false">Mostrar</button></div></div>
+        <div class="field"><label for="uPapel">Tipo de acesso</label><select class="inp" id="uPapel"><option value="leitor">Leitor — só consulta</option><option value="editor">Editor — consulta, altera e importa</option><option value="admin">Administrador — tudo, inclusive usuários</option></select></div>
+        <div class="field usr-chk"><label><input type="checkbox" id="uCusto"> Pode ver o custo</label></div>
+      </div>
+      <button class="add usr-add" type="submit" id="uAdd">Cadastrar e liberar</button>
+      <div class="usr-msg" id="usrMsg" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+  <section class="card" style="margin-top:12px">
+    <h3>Usuários liberados <span class="leg" id="usrCount"></span></h3>
+    <div class="tw"><table class="mt usr-t"><thead><tr><th>E-mail</th><th>Tipo de acesso</th><th>Vê o custo</th><th>Ações</th></tr></thead><tbody id="usrBody"></tbody></table></div>
+  </section>
 </main>
 <div class="toast" id="toast" role="status"></div>
 
@@ -804,14 +837,14 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     const r=await SB.from('membros').select('empresa_id,papel,ver_custo,empresas(nome)').eq('user_id',ses.user.id);
     if(r.error){showAuth('login');authMsg('Não foi possível verificar o seu acesso. Tente de novo.');return}
     if(!r.data||!r.data.length){showAuth('sem');return}
-    const m=r.data[0];EMP={id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||''};
-    liberar();recarregarOnline(false)}
+    usrMeuId=ses.user.id;const m=r.data[0];EMP={id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||''};
+    liberar();$('tabUsr').hidden=m.papel!=='admin';recarregarOnline(false)}
   async function iniciarLogin(){
     await new Promise((ok,ko)=>{const s=document.createElement('script');
       s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
       s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
     SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;showAuth('login')}});
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;$('tabUsr').hidden=true;showAuth('login')}});
     const g=await SB.auth.getSession();
     if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
     if(g.data.session)entrou(g.data.session);else showAuth('login')}
@@ -832,9 +865,72 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('outBtn').onclick=async()=>{S.products=[];save();try{localStorage.removeItem(CK)}catch(e){}
     try{await SB.auth.signOut()}catch(e){}location.reload()};
   $('semSair').onclick=()=>$('outBtn').onclick();
+  /* ---------- Página Usuários (somente administrador) ---------- */
+  const PAPEL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
+  const usrMsg=(t,ok)=>{const m=$('usrMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
+  async function usrChamar(body){
+    const r=await SB.functions.invoke('gerenciar-usuarios',{body});
+    if(r.error){let t='Não foi possível concluir. Tente de novo.';
+      try{const j=await r.error.context.json();if(j&&j.erro)t=j.erro}catch(e){}
+      throw new Error(t)}
+    if(r.data&&r.data.erro)throw new Error(r.data.erro);
+    return r.data||{}}
+  let usrLista=[];
+  async function usrCarregar(){
+    if(!SB||!EMP||EMP.papel!=='admin')return;
+    const r=await SB.from('membros').select('user_id,email,papel,ver_custo').eq('empresa_id',EMP.id).order('email');
+    if(r.error){$('usrBody').innerHTML='<tr><td colspan="4" class="empty" style="text-align:center">Não foi possível carregar os usuários.</td></tr>';return}
+    usrLista=r.data||[];usrDesenhar()}
+  function usrDesenhar(){
+    $('usrCount').textContent=usrLista.length+(usrLista.length===1?' pessoa':' pessoas');
+    const eu=usrMeuId;
+    $('usrBody').innerHTML=usrLista.map(u=>{const s=u.user_id===eu,cu=u.papel!=='leitor';
+      return '<tr data-u="'+esc(u.user_id)+'" data-e="'+esc(u.email||'')+'"><td>'+esc(u.email||'—')+(s?' <small style="color:var(--muted)">(você)</small>':'')+'</td>'+
+        '<td><select class="inp u-pp" '+(s?'disabled':'')+'>'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===u.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select></td>'+
+        '<td><input type="checkbox" class="u-cc" aria-label="Pode ver o custo" '+(u.ver_custo||cu?'checked':'')+(cu||s?' disabled':'')+'></td>'+
+        '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="senha">Trocar senha</button>'+(s?'':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="4" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
+  let usrMeuId=null;
+  $('uPapel').onchange=()=>{const c=$('uCusto'),l=$('uPapel').value==='leitor';c.checked=!l;c.disabled=!l};
+  $('uPapel').onchange();
+  $('uVer').onclick=()=>{const i=$('uSenha'),v=i.type==='password';i.type=v?'text':'password';$('uVer').textContent=v?'Ocultar':'Mostrar';$('uVer').setAttribute('aria-pressed',v)};
+  $('usrForm').onsubmit=async e=>{e.preventDefault();
+    const b=$('uAdd');b.disabled=true;usrMsg('Cadastrando…',true);
+    try{const d=await usrChamar({acao:'criar',email:$('uEmail').value.trim(),senha:$('uSenha').value,papel:$('uPapel').value,ver_custo:$('uCusto').checked});
+      usrMsg(d.msg||'Usuário liberado.',true);$('uEmail').value='';$('uSenha').value='';$('uSenha').type='password';$('uVer').textContent='Mostrar';
+      await usrCarregar()}
+    catch(x){usrMsg(x.message,false)}
+    b.disabled=false};
+  let usrConf=null;
+  $('usrBody').onchange=e=>{const tr=e.target.closest('tr');if(!tr||!e.target.classList.contains('u-pp'))return;
+    const c=tr.querySelector('.u-cc'),l=e.target.value==='leitor';if(!l){c.checked=true}c.disabled=!l};
+  $('usrBody').onclick=async e=>{
+    const bt=e.target.closest('button[data-a]');if(!bt)return;
+    const tr=bt.closest('tr'),uid=tr.dataset.u,em=tr.dataset.e,a=bt.dataset.a;
+    if(a!=='remover'&&usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf');usrConf=null}
+    try{
+      if(a==='salvar'){
+        const pp=tr.querySelector('.u-pp').value,cc=pp!=='leitor'?true:tr.querySelector('.u-cc').checked;
+        const r=await SB.from('membros').update({papel:pp,ver_custo:cc}).eq('empresa_id',EMP.id).eq('user_id',uid);
+        if(r.error)throw new Error('Não foi possível salvar. A empresa precisa ter pelo menos um administrador.');
+        usrMsg('Acesso de '+em+' atualizado.',true);await usrCarregar()}
+      else if(a==='senha'){
+        let w=tr.querySelector('.pwr');
+        if(!w){w=document.createElement('div');w.className='pwr';w.innerHTML='<input class="inp" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 8)" minlength="8" maxlength="72"><button type="button" class="pri" data-a="senha-ok" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer">Confirmar</button>';
+          tr.querySelector('.ac').after(w);w.querySelector('input').focus()}
+        else w.remove()}
+      else if(a==='senha-ok'){
+        const ip=tr.querySelector('.pwr input');
+        await usrChamar({acao:'senha',email:em,senha:ip.value});
+        tr.querySelector('.pwr').remove();usrMsg('Senha de '+em+' trocada.',true)}
+      else if(a==='remover'){
+        if(usrConf!==bt){if(usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf')}
+          usrConf=bt;bt.textContent='Confirmar remoção';bt.classList.add('conf');return}
+        usrConf=null;
+        await usrChamar({acao:'remover',email:em});usrMsg(em+' foi removido.',true);await usrCarregar()}
+    }catch(x){usrMsg(x.message,false)}};
   $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
-    ['vSim','vMat'].forEach(id=>{$(id).hidden=id!==b.dataset.v})};
+    ['vSim','vMat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr')usrCarregar()};
   if(SUPABASE_URL&&SUPABASE_ANON_KEY)iniciarLogin().catch(()=>{showAuth('login');authMsg('Não foi possível carregar o login. Verifique a conexão.')});
   else document.body.classList.add('ready');
   render();
