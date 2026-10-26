@@ -138,9 +138,9 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .usr-chk{display:flex;align-items:center;min-height:38px}.usr-chk label{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--t9)}
 .usr-add{max-width:280px}
 .usr-msg{margin-top:10px;font-size:13px;min-height:18px}.usr-msg.ok{color:#1f7a3a}.usr-msg.er{color:var(--red)}
-.usr-t{min-width:640px}.usr-t td{vertical-align:middle}.usr-t td:first-child{text-align:left}.usr-t select{width:auto;padding:6px 8px}
+.mt.usr-t{width:100%;min-width:820px;table-layout:fixed}.usr-t th:nth-child(1){width:29%}.usr-t th:nth-child(2){width:19%}.usr-t th:nth-child(3){width:10%}.usr-t th:nth-child(4){width:42%}.usr-t td:first-child{overflow-wrap:anywhere;white-space:normal}.usr-t td{vertical-align:middle}.usr-t td:first-child{text-align:left}.usr-t select{width:auto;padding:6px 8px}
 .usr-t td:nth-child(2){text-align:center;min-width:0;white-space:nowrap}
-.usr-t .ac{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.usr-t .ac{display:grid;grid-template-columns:70px 108px 126px;gap:6px;justify-content:center}.usr-t .ac button{width:100%;white-space:nowrap}.usr-t td:nth-child(2) select{width:100%;max-width:170px}
 .usr-t .ac button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer}
 .usr-t .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}.usr-t .ac button.del{color:var(--red)}.usr-t .ac button.conf{background:var(--red);color:#fff;border-color:var(--red)}
 .usr-t .pwr{display:flex;gap:6px;justify-content:center;margin-top:6px}.usr-t .pwr input{max-width:170px;padding:5px 8px}
@@ -888,7 +888,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       return '<tr data-u="'+esc(u.user_id)+'" data-e="'+esc(u.email||'')+'"><td>'+esc(u.email||'—')+(s?' <small style="color:var(--muted)">(você)</small>':'')+'</td>'+
         '<td><select class="inp u-pp" '+(s?'disabled':'')+'>'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===u.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select></td>'+
         '<td><input type="checkbox" class="u-cc" aria-label="Pode ver o custo" '+(u.ver_custo||cu?'checked':'')+(cu||s?' disabled':'')+'></td>'+
-        '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="senha">Trocar senha</button>'+(s?'':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="4" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
+        '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="senha">Trocar senha</button>'+(s?'<span></span>':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="4" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
   let usrMeuId=null;
   $('uPapel').onchange=()=>{const c=$('uCusto'),l=$('uPapel').value==='leitor';c.checked=!l;c.disabled=!l};
   $('uPapel').onchange();
