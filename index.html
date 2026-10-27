@@ -335,7 +335,10 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     return parseFloat(s)};
 
   let S=load(), C=loadCat(), byCode=new Map(), REMOTE=false;
-  function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.products))return Object.assign(clone(DEF),s)}catch(e){}return clone(DEF)}
+  const pKey=p=>key(p.code)||String(p.name||'').trim().toLowerCase();
+  const idxKey=(L,k,except)=>L.findIndex((x,i)=>i!==except&&pKey(x)===k);
+  function semRepetidos(L){const o=[];L.forEach(p=>{const i=idxKey(o,pKey(p));if(i<0)o.push(p);else o[i]=p});return o}
+  function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.products)){const r=Object.assign(clone(DEF),s),n=r.products.length;r.products=semRepetidos(r.products);if(r.products.length!==n)r.sel=0;return r}}catch(e){}return clone(DEF)}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
   function loadCat(){try{const c=JSON.parse(localStorage.getItem(CK));if(c&&Array.isArray(c.items))return c}catch(e){}return {items:[],name:''}}
   function saveCat(){try{localStorage.setItem(CK,JSON.stringify(C))}catch(e){toast('Cadastro grande demais para salvar no navegador; importe de novo ao abrir.')}}
@@ -548,10 +551,17 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('addBtn').onclick=()=>{
     const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=num($('pCost').value),cur=num($('pCur').value),qty=parseInt($('pQty').value,10);
     if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
-    if(editIdx>=0&&S.products[editIdx]){S.products[editIdx]=Object.assign({code,name,cost,current:cur,qty},curPar?{par:curPar}:{});S.sel=editIdx;save();render();endEdit();closeSug();toast('Alterações salvas');atualizarBase(S.products[S.sel]);return}
-    S.products.push(Object.assign({code,name,cost,current:cur,qty},curPar?{par:curPar}:{}));S.sel=S.products.length-1;save();render();
+    const np=Object.assign({code,name,cost,current:cur,qty},curPar?{par:curPar}:{}),dup=idxKey(S.products,pKey(np),editIdx);
+    if(editIdx>=0&&S.products[editIdx]){
+      S.products[editIdx]=np;S.sel=editIdx;
+      if(dup>=0){S.products.splice(dup,1);if(dup<editIdx)S.sel=editIdx-1}
+      save();render();endEdit();closeSug();toast(dup>=0?'Alterações salvas. O item repetido foi unificado.':'Alterações salvas');atualizarBase(S.products[S.sel]);return}
+    let aviso='Dados incluídos';
+    if(dup>=0){S.products[dup]=np;S.sel=dup;aviso='Este item já estava na tabela — os dados foram atualizados.'}
+    else{S.products.push(np);S.sel=S.products.length-1}
+    save();render();
     curPar=null;lastQ='';['pCode','pDesc','pCost','pCur','pQty'].forEach(id=>$(id).value='');$('hint').textContent='';auto=false;closeSug();fq($('pCode'));
-    toast('Dados incluídos');atualizarBase(S.products[S.sel]);
+    toast(aviso);atualizarBase(S.products[S.sel]);
   };
 
   /* ---------- Cálculos (mesmas fórmulas da aba BEBIDAS QUENTES) ---------- */
@@ -708,234 +718,4 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     bars($('ch1'),cats,[{n:'Custo',c:'#143b46',v:rows.map(r=>r.cost)},{n:'Atual',c:'#25879b',v:rows.map(r=>r.pr)},{n:'Sugerido',c:'#f2c811',v:rows.map(r=>r.sug)},{n:'Marketplace',c:'#7a8f98',v:rows.map(r=>r.mktS)}]);
     bars($('ch2'),cats,[{n:'Atual',c:'#25879b',v:rows.map(r=>r.fat)},{n:'Com desconto',c:'#f2c811',v:rows.map(r=>r.fatd)}]);
 
-    $('tb').innerHTML=rows.map((r,i)=>`<tr data-i="${i}" class="${i===S.sel?'on':''}"><td>${esc(r.p.code)}</td><td>${esc(r.p.name)}</td><td>${brl(r.cost)}</td><td>${brl(r.pr)}</td><td>${brl(r.sug)}</td><td>${brl(r.mktS)}</td><td class="${r.mc<0?'neg':''}">${fp(r.mcp)}</td><td>${brl(r.pd)}</td><td>${brl(r.fat)}</td><td class="${r.dif<0?'neg':''}">${brl(r.dif)}</td><td><button class="ed" data-edit="${i}" aria-label="Editar ${esc(r.p.name)}" title="Editar"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L5 13.5 2 14l.5-3z"/></svg></button><button class="del" data-del="${i}" aria-label="Remover ${esc(r.p.name)}" title="Remover">×</button></td></tr>`).join('')
-      ||'<tr><td colspan="11" class="empty" style="text-align:center">Nenhum produto incluído.</td></tr>';
-
-    $('det').innerHTML=s?lines(s).map(l=>l[0]==='#'?`<tr class="sec"><td colspan="3">${l[1]}</td></tr>`:
-      `<tr class="${l[3]==='b'?'b':''}"><td>${l[0]}</td><td>${l[1]==null?'':typeof l[1]==='number'?fp(l[1]):l[1]}</td><td class="${l[2]<0?'neg':''}">${l[2]==null?'':l[3]==='n'?n2(l[2]):brl(l[2])}</td></tr>`).join('')
-      :'<tr><td class="empty">Inclua um produto para ver o cálculo.</td></tr>';
-  }
-
-  /* ---------- Painel, parâmetros e eventos ---------- */
-  $('params').innerHTML=PR.map(([k,l,mx])=>`<div class="field"><label for="${k}N">${l}</label><div class="rng"><input type="range" id="${k}R" min="0" max="${mx}" step="0.5"><input class="inp" type="number" id="${k}N" min="0" max="${mx}" step="0.01"></div></div>`).join('');
-  $('taxes').innerHTML=TX.map(([k,l])=>`<div class="field"><label for="${k}N">${l}</label><input class="inp" type="number" id="${k}N" min="0" max="100" step="0.01"></div>`).join('');
-  PR.concat(TX).forEach(([k,,mx])=>{
-    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));const tx1=TX.some(t=>t[0]===k);S.products.forEach(p=>{if(p.par){delete p.par[k];if(tx1)delete p.par.tot}});if(curPar){delete curPar[k];if(tx1)delete curPar.tot}save();render()};
-    $(k+'N').oninput=e=>set(e.target.value);
-    $(k+'N').onblur=()=>{$(k+'N').value=S[k]};
-    if($(k+'R'))$(k+'R').oninput=e=>set(e.target.value)});
-
-  function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-  function setOpen(o){document.body.classList.toggle('open',o);$('drawer').setAttribute('aria-hidden',!o);$('openBtn').setAttribute('aria-expanded',o);if(o)fq($('pCode'))}
-  $('openBtn').onclick=()=>setOpen(true);
-  $('closeBtn').onclick=()=>setOpen(false);
-  $('scrim').onclick=()=>setOpen(false);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false)});
-  $('tb').onclick=e=>{
-    const d=e.target.closest('[data-del]');
-    const ed=e.target.closest('[data-edit]');
-    if(ed){startEdit(+ed.dataset.edit);return}
-    if(d){endEdit();S.products.splice(+d.dataset.del,1);if(S.sel>=S.products.length)S.sel=S.products.length-1;save();render();return}
-    const tr=e.target.closest('tr[data-i]');if(tr){S.sel=+tr.dataset.i;save();render()}};
-  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Parâmetros restaurados e tabela limpa (o cadastro importado foi mantido)')};
-
-  /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
-  async function loadRemote(){
-    /* No Apps Script: o cadastro vem da planilha privada, só depois de o servidor conferir o e-mail */
-    if(window.google&&google.script&&google.script.run){
-      google.script.run.withSuccessHandler(r=>{if(r&&r.length)importRows(r,'planilha privada · Google',true)}).withFailureHandler(()=>{}).catalogo();
-      return}
-    if(location.protocol==='file:')return;
-    try{
-      let rows=null,nm='',tabsR=[];
-      const rc=await fetch('produtos.csv',{cache:'no-cache'});
-      if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
-        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
-      else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
-        if(rx.ok){const bx=await rx.arrayBuffer();rows=await readXlsx(bx,'ENGEN CARDAPIO');try{tabsR=await readAbasItens(bx)}catch(e){}nm='produtos.xlsx'}}
-      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true,tabsR)
-    }catch(e){}
-  }
-  if(!SUPABASE_URL)loadRemote();
-  /* Atualizar dados: lê de novo a planilha do Google. Só consegue quem tem acesso à planilha. */
-  let gisP=null,gTok=null,gExp=0;
-  function carregarGIS(){
-    if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();
-    if(gisP)return gisP;
-    gisP=new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;
-      s.onload=()=>ok();s.onerror=()=>{gisP=null;ko(new Error('gis'))};document.head.appendChild(s)});
-    return gisP}
-  function pedirToken(){return new Promise((ok,ko)=>{
-    if(gTok&&Date.now()<gExp){ok(gTok);return}
-    google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:'https://www.googleapis.com/auth/spreadsheets.readonly',
-      callback:r=>{if(r&&r.access_token){gTok=r.access_token;gExp=Date.now()+((r.expires_in||3600)-60)*1000;ok(gTok)}else ko(new Error((r&&r.error)||'sem token'))},
-      error_callback:e=>ko(new Error((e&&e.type)||'cancelado'))}).requestAccessToken()})}
-  async function lerPlanilha(){
-    await carregarGIS();const t=await pedirToken();
-    const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+PLANILHA_ID+'/values/'+encodeURIComponent(ABA_PRODUTOS),{headers:{Authorization:'Bearer '+t}});
-    if(r.status===401||r.status===403||r.status===404){gTok=null;const e=new Error('perm');e.perm=true;throw e}
-    if(!r.ok)throw new Error('http '+r.status);
-    const j=await r.json();
-    return (j.values||[]).map(l=>l.map(x=>x==null?'':String(x)))}
-  $('updBtn').addEventListener('pointerdown',()=>{if(!(window.google&&google.script&&google.script.run)&&GOOGLE_CLIENT_ID)carregarGIS().catch(()=>{})});
-  $('updBtn').onclick=()=>{
-    if(SB&&EMP){recarregarOnline(true);return}
-    const b=$('updBtn'),noApps=!(window.google&&google.script&&google.script.run);
-    if(noApps&&!GOOGLE_CLIENT_ID){toast('A atualização online ainda não foi configurada. Use Importar dados ou fale com o administrador.');return}
-    const txt=b.textContent;b.disabled=true;b.textContent='Atualizando…';
-    const fim=()=>{b.disabled=false;b.textContent=txt};
-    const ok=r=>{fim();
-      if(!r||r.length<2){toast('A aba Produtos da planilha está vazia.');return}
-      const antes=C;importRows(r,'planilha Google · atualizada',!noApps);
-      if(C===antes){toast('Não encontrei produtos válidos na aba Produtos. Confira o cabeçalho.');return}
-      toast(C.items.length+' produtos atualizados da planilha.')};
-    const ko=e=>{fim();toast(e&&e.perm?'Sem permissão para atualizar: é preciso ter acesso à planilha.':'Não foi possível acessar a planilha. Entre com a conta que tem acesso e tente de novo.')};
-    if(noApps)lerPlanilha().then(ok,ko);
-    else google.script.run.withSuccessHandler(ok).withFailureHandler(()=>ko({perm:true})).catalogo()};
-  /* ===== LOGIN E BANCO ONLINE (Supabase): quem tem acesso aos dados consulta; editor/admin atualizam ===== */
-  const pode=()=>EMP&&(EMP.papel==='admin'||EMP.papel==='editor');
-  function authMsg(t,ok){const m=$('authMsg');m.textContent=t||'';m.className=ok?'ok':''}
-  function showAuth(f){document.body.classList.remove('ready');$('auth').hidden=false;$('fLogin').hidden=f!=='login';$('fSenha').hidden=f!=='senha';$('fSem').hidden=f!=='sem';if(f!=='login')authMsg('')}
-  function liberar(){$('auth').hidden=true;document.body.classList.add('ready');$('outBtn').hidden=false}
-  async function lerTudo(tab,cols,ord){
-    const out=[];
-    for(let i=0;;i+=1000){const r=await SB.from(tab).select(cols).eq('empresa_id',EMP.id).order(ord).range(i,i+999);
-      if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}
-    return out}
-  async function recarregarOnline(avisar){
-    try{
-      const prods=await lerTudo('produtos','id,codigo,descricao,preco,preco_sugerido,preco_marketplace,categoria,quadrante,ordem','ordem'),custo=new Map();
-      try{(await lerTudo('custos','produto_id,custo,custo_total,mc_atual,markup_atual,markup_sugerido,parametros,qtd_vendida','produto_id')).forEach(c=>custo.set(c.produto_id,c))}catch(e){}
-      const nn=v=>v==null?null:Number(v);
-      C={items:prods.map(p=>{const c=custo.get(p.id)||{};
-        return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
-        name:'banco online · '+EMP.nome};
-      index();REMOTE=true;render();
-      if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
-    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.')}}
-  /* Envia a base para o banco: SUBSTITUI a base da empresa (como a planilha ENGEN CARDAPIO, que é a base completa) */
-  async function enviarParaBanco(items){
-    if(!pode())return;
-    if(!confirm('Substituir a base online ('+C.items.length+' itens atuais) por '+items.length+' itens deste arquivo? Isso vale para todos os usuários da empresa.'))return;
-    try{
-      const itens=items.filter(i=>String(i.c).trim()).map((i,n)=>({codigo:String(i.c).trim(),descricao:i.d||String(i.c),preco:i.p||0,preco_sugerido:i.ps==null?null:i.ps,preco_marketplace:i.pm==null?null:i.pm,
-        categoria:i.cat||null,quadrante:i.q||null,ordem:n+1,custo:i.k>0?i.k:null,custo_total:i.ct==null?null:i.ct,mc_atual:i.mcp==null?null:i.mcp,markup_atual:i.mka==null?null:i.mka,markup_sugerido:i.mks==null?null:i.mks,parametros:i.par?Object.assign({pb:i.pb||'A'},i.par):null,qtd_vendida:i.qt>0?i.qt:null}));
-      const r=await SB.rpc('substituir_base',{p_empresa:EMP.id,p_itens:itens});
-      if(r.error)throw r.error;
-      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'substituiu_base',detalhe:{qtd:itens.length}});
-      await recarregarOnline(false);
-      toast(itens.length+' itens enviados: a base foi atualizada para todos.');
-    }catch(e){toast('Não foi possível enviar os dados. Confira se você tem permissão de edição.')}}
-  async function salvarItensNoBanco(its){
-    try{
-      for(const it of its){
-        const a=await SB.from('produtos').update({descricao:it.d,preco:it.p,preco_sugerido:it.ps,preco_marketplace:it.pm}).eq('id',it.id);if(a.error)throw a.error;
-        const b=await SB.from('custos').upsert({produto_id:it.id,empresa_id:EMP.id,custo:it.k,custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks,parametros:it.par?Object.assign({pb:it.pb||'A'},it.par):null,qtd_vendida:it.qt>0?it.qt:null},{onConflict:'produto_id'});if(b.error)throw b.error}
-      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
-    }catch(e){toast('A base online não foi atualizada. Confira a sua permissão de edição.')}}
-  async function entrou(ses){
-    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,empresas(nome)').eq('user_id',ses.user.id);
-    if(r.error){showAuth('login');authMsg('Não foi possível verificar o seu acesso. Tente de novo.');return}
-    if(!r.data||!r.data.length){showAuth('sem');return}
-    usrMeuId=ses.user.id;const m=r.data[0];EMP={id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||''};
-    liberar();$('tabUsr').hidden=m.papel!=='admin';recarregarOnline(false)}
-  async function iniciarLogin(){
-    await new Promise((ok,ko)=>{const s=document.createElement('script');
-      s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
-      s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
-    SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;$('tabUsr').hidden=true;showAuth('login')}});
-    const g=await SB.auth.getSession();
-    if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
-    if(g.data.session)entrou(g.data.session);else showAuth('login')}
-  $('fLogin').onsubmit=async e=>{e.preventDefault();authMsg('Entrando…',true);
-    const r=await SB.auth.signInWithPassword({email:$('aEmail').value.trim(),password:$('aSenha').value});
-    if(r.error){authMsg('E-mail ou senha incorretos.');return}
-    $('aSenha').value='';authMsg('');entrou(r.data.session)};
-  $('aEsqueci').onclick=async()=>{const em=$('aEmail').value.trim();
-    if(!em){authMsg('Digite o seu e-mail acima.');return}
-    await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
-    authMsg('Se o e-mail estiver cadastrado, enviamos um link para criar uma nova senha.',true)};
-  $('fSenha').onsubmit=async e=>{e.preventDefault();const a=$('nSenha').value;
-    if(a.length<8){authMsg('Use ao menos 8 caracteres.');return}
-    const r=await SB.auth.updateUser({password:a});
-    if(r.error){authMsg('Não foi possível salvar a senha. Peça um novo link ao administrador.');return}
-    $('nSenha').value='';history.replaceState(null,'',location.pathname+location.search);
-    const g=await SB.auth.getSession();if(g.data.session)entrou(g.data.session);else showAuth('login')};
-  $('outBtn').onclick=async()=>{S.products=[];save();try{localStorage.removeItem(CK)}catch(e){}
-    try{await SB.auth.signOut()}catch(e){}location.reload()};
-  $('semSair').onclick=()=>$('outBtn').onclick();
-  /* ---------- Página Usuários (somente administrador) ---------- */
-  const PAPEL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
-  const usrMsg=(t,ok)=>{const m=$('usrMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
-  async function usrChamar(body){
-    const r=await SB.functions.invoke('gerenciar-usuarios',{body});
-    if(r.error){let t='Não foi possível concluir. Tente de novo.';
-      try{const j=await r.error.context.json();if(j&&j.erro)t=j.erro}catch(e){}
-      throw new Error(t)}
-    if(r.data&&r.data.erro)throw new Error(r.data.erro);
-    return r.data||{}}
-  let usrLista=[];
-  async function usrCarregar(){
-    if(!SB||!EMP||EMP.papel!=='admin')return;
-    const r=await SB.from('membros').select('user_id,email,papel,ver_custo').eq('empresa_id',EMP.id).order('email');
-    if(r.error){$('usrBody').innerHTML='<tr><td colspan="4" class="empty" style="text-align:center">Não foi possível carregar os usuários.</td></tr>';return}
-    usrLista=r.data||[];usrDesenhar()}
-  function usrDesenhar(){
-    $('usrCount').textContent=usrLista.length+(usrLista.length===1?' pessoa':' pessoas');
-    const eu=usrMeuId;
-    $('usrBody').innerHTML=usrLista.map(u=>{const s=u.user_id===eu,cu=u.papel!=='leitor';
-      return '<tr data-u="'+esc(u.user_id)+'" data-e="'+esc(u.email||'')+'"><td>'+esc(u.email||'—')+(s?' <small style="color:var(--muted)">(você)</small>':'')+'</td>'+
-        '<td><select class="inp u-pp" '+(s?'disabled':'')+'>'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===u.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select></td>'+
-        '<td><input type="checkbox" class="u-cc" aria-label="Pode ver o custo" '+(u.ver_custo||cu?'checked':'')+(cu||s?' disabled':'')+'></td>'+
-        '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="senha">Trocar senha</button>'+(s?'<span></span>':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="4" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
-  let usrMeuId=null;
-  $('uPapel').onchange=()=>{const c=$('uCusto'),l=$('uPapel').value==='leitor';c.checked=!l;c.disabled=!l};
-  $('uPapel').onchange();
-  $('uVer').onclick=()=>{const i=$('uSenha'),v=i.type==='password';i.type=v?'text':'password';$('uVer').textContent=v?'Ocultar':'Mostrar';$('uVer').setAttribute('aria-pressed',v)};
-  $('usrForm').onsubmit=async e=>{e.preventDefault();
-    const b=$('uAdd');b.disabled=true;usrMsg('Cadastrando…',true);
-    try{const d=await usrChamar({acao:'criar',email:$('uEmail').value.trim(),senha:$('uSenha').value,papel:$('uPapel').value,ver_custo:$('uCusto').checked});
-      usrMsg(d.msg||'Usuário liberado.',true);$('uEmail').value='';$('uSenha').value='';$('uSenha').type='password';$('uVer').textContent='Mostrar';
-      await usrCarregar()}
-    catch(x){usrMsg(x.message,false)}
-    b.disabled=false};
-  let usrConf=null;
-  $('usrBody').onchange=e=>{const tr=e.target.closest('tr');if(!tr||!e.target.classList.contains('u-pp'))return;
-    const c=tr.querySelector('.u-cc'),l=e.target.value==='leitor';if(!l){c.checked=true}c.disabled=!l};
-  $('usrBody').onclick=async e=>{
-    const bt=e.target.closest('button[data-a]');if(!bt)return;
-    const tr=bt.closest('tr'),uid=tr.dataset.u,em=tr.dataset.e,a=bt.dataset.a;
-    if(a!=='remover'&&usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf');usrConf=null}
-    try{
-      if(a==='salvar'){
-        const pp=tr.querySelector('.u-pp').value,cc=pp!=='leitor'?true:tr.querySelector('.u-cc').checked;
-        const r=await SB.from('membros').update({papel:pp,ver_custo:cc}).eq('empresa_id',EMP.id).eq('user_id',uid);
-        if(r.error)throw new Error('Não foi possível salvar. A empresa precisa ter pelo menos um administrador.');
-        usrMsg('Acesso de '+em+' atualizado.',true);await usrCarregar()}
-      else if(a==='senha'){
-        let w=tr.querySelector('.pwr');
-        if(!w){w=document.createElement('div');w.className='pwr';w.innerHTML='<input class="inp" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 8)" minlength="8" maxlength="72"><button type="button" class="pri" data-a="senha-ok" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer">Confirmar</button>';
-          tr.querySelector('.ac').after(w);w.querySelector('input').focus()}
-        else w.remove()}
-      else if(a==='senha-ok'){
-        const ip=tr.querySelector('.pwr input');
-        await usrChamar({acao:'senha',email:em,senha:ip.value});
-        tr.querySelector('.pwr').remove();usrMsg('Senha de '+em+' trocada.',true)}
-      else if(a==='remover'){
-        if(usrConf!==bt){if(usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf')}
-          usrConf=bt;bt.textContent='Confirmar remoção';bt.classList.add('conf');return}
-        usrConf=null;
-        await usrChamar({acao:'remover',email:em});usrMsg(em+' foi removido.',true);await usrCarregar()}
-    }catch(x){usrMsg(x.message,false)}};
-  $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;
-    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
-    ['vSim','vMat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr')usrCarregar()};
-  if(SUPABASE_URL&&SUPABASE_ANON_KEY)iniciarLogin().catch(()=>{showAuth('login');authMsg('Não foi possível carregar o login. Verifique a conexão.')});
-  else document.body.classList.add('ready');
-  render();
-})();
-</script>
-
-</body>
-</html>
+    $('tb').innerHTML=rows.map((r,i)=>`<tr data-i="${i}" class="${i===S.sel?'on':''}"><td>${esc(r.p.code)}</td><td>${esc(r.p.name)}</td><td>${brl(r.cost)}</td><td>${brl(r.pr)}</td><td>${brl(r.sug)}</td><td>${brl(r.mktS)}</td><td class="${r.mc<0?'neg':''}">${fp(r.mcp)}</td><td>${brl(r.pd)}</td><td>${brl(r.fat)}</td><td class="${r.dif<0?'neg':''}">${brl(r.dif)}</td><td><button class="ed" data-edit="${i}" aria-label="E
