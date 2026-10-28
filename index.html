@@ -242,6 +242,15 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     <div class="warn" id="warn">Margem + impostos e taxas precisa ser menor que 100% para calcular o preço sugerido.</div>
     <h2>Impostos e taxas (%)</h2>
     <div class="g2" id="taxes"></div>
+    <h2>Classificação da Matriz</h2>
+    <div class="field"><label for="clVm">Corte de volume de vendas (V)</label>
+      <select class="inp" id="clVm"><option value="kas">70% da média das quantidades (padrão)</option><option value="media">Média das quantidades</option><option value="mediana">Mediana das quantidades</option><option value="fixo">Valor fixo (quantidade)</option></select>
+      <input class="inp" id="clVv" type="number" min="0" step="1" inputmode="decimal" placeholder="Quantidade mínima para V alto" style="margin-top:6px" hidden></div>
+    <div class="field"><label for="clMm">Corte de margem de contribuição (M)</label>
+      <select class="inp" id="clMm"><option value="pond">Média ponderada pelas vendas (padrão)</option><option value="mediana">Mediana das margens</option><option value="fixo">Valor fixo (%)</option></select>
+      <input class="inp" id="clMv" type="number" min="-100" max="100" step="0.1" inputmode="decimal" placeholder="MC mínima (%) para M alto" style="margin-top:6px" hidden></div>
+    <div class="hint" id="clInfo" style="margin-top:0"></div>
+    <button class="add" id="clBtn" type="button">Reclassificar itens</button>
   </div>
 </aside>
 
@@ -317,7 +326,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   let SB=null,EMP=null;
   /* ============================================================================ */
   const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1';
-  const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,
+  const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,cls:{vm:'kas',vv:0,mm:'pond',mv:0},
     products:[]};
   const PR=[['mc','Margem de contribuição desejada (%)',100],['mkt','Taxa do marketplace (%)',50],['desc','Desconto simulado (%)',50]];
   const TX=[['csll','CSLL + IR'],['pis','PIS'],['cofins','COFINS'],['icms','ICMS'],['cartao','Cartão'],['comissao','Comissão']];
@@ -371,22 +380,37 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       C={items:lista,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
       if(!remote){toast(lista.length+' itens importados'+(mm.info?' ('+mm.info.casados+' de '+eng.length+' da Matriz com custo real das abas dos itens'+(mm.info.extras?' + '+mm.info.extras+' itens extras':'')+')'+(mm.info.casados<eng.length?'. Atenção: nos demais o custo foi estimado; importe a planilha completa':''):' da aba ENGEN CARDAPIO. Atenção: o arquivo não tem as abas dos itens, então o custo foi estimado')+(REMOTE?' (somente nesta sessão)':''));if(SB&&EMP)enviarParaBanco(lista)}
       return}
-    const al={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto'],d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto'],p:['preco','precoatual','precovenda','valor','price','precounitario'],k:['custo','precocusto','cost','customedio','custounitario']};
-    let ix={},start=-1;
-    for(let r=0;r<Math.min(10,rows.length)&&start<0;r++){
-      const h=rows[r].map(x=>norm(x).replace(/[^a-z]/g,''));
-      const t={};for(const k in al)t[k]=h.findIndex(x=>al[k].includes(x));
-      if(t.c>=0&&t.d>=0){ix=t;start=r+1}}
-    if(start<0){ix={c:0,d:1,p:2,k:3};start=(rows[0].length>2&&isNaN(num(rows[0][2])))?1:0}
+    const cab=acharCab(rows);
+    let ix,start;
+    if(cab){ix=cab.ix;start=cab.start}
+    else{ix={c:0,d:1,p:2,k:3,q:-1,g:-1};start=(rows[0].length>2&&isNaN(num(rows[0][2])))?1:0}
     const items=[];
-    for(let i=start;i<rows.length;i++){const r=rows[i],c=(r[ix.c]||'').trim(),d=(r[ix.d]||'').trim();
-      if(!c&&!d)continue;
-      items.push({c,d,p:ix.p>=0?(num(r[ix.p])||0):0,k:ix.k>=0?(num(r[ix.k])||0):0})}
+    for(let i=start;i<rows.length;i++){const r=rows[i],c=(r[ix.c]||'').toString().trim(),d=(r[ix.d]||'').toString().trim();
+      if(!c&&!d)continue;if(/^total\b/i.test(c)||/^total\b/i.test(d))continue;
+      const it={c,d,p:ix.p>=0?(num(r[ix.p])||0):0,k:ix.k>=0?(num(r[ix.k])||0):0};
+      if(ix.q>=0){const q=num(r[ix.q]);it.qt=isNaN(q)?0:+q.toFixed(3)}
+      if(ix.g>=0){const g=String(r[ix.g]||'').trim();if(g&&!/^\(?geral\)?$/i.test(g))it.cat=g}
+      it.p=+it.p.toFixed(4);it.k=+it.k.toFixed(4);
+      items.push(it)}
     if(!items.length){if(!remote)toast('Nenhum produto encontrado. Colunas esperadas: código, descrição, preço.');return}
+    if(ix.q>=0&&ix.k>=0&&ix.p>=0){importVendas(items,name,remote);return}
     C={items,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
     if(!remote)toast(items.length+' produtos importados'+(REMOTE?' (somente nesta sessão)':''));
     if(!remote&&SB&&EMP)enviarParaBanco(items);
   }
+  /* Cabeçalho reconhecido em vários formatos (CSV/Excel de ERP, relatório ABC de vendas, lista simples) */
+  const ALIAS={c:['codigo','cod','code','id','sku','produtoid','idproduto','codproduto','codigoproduto','cdproduto','referencia'],
+    d:['descricao','produto','nome','description','item','descricaoproduto','nomeproduto','descricaodoproduto','nomedoproduto'],
+    p:['preco','precoatual','precovenda','precodevenda','valor','price','precounitario','valorvenda','valordevenda','pvenda'],
+    k:['custo','precocusto','precodecusto','cost','customedio','custounitario','custodoproduto','custoproduto','cmv','pcusto'],
+    q:['qde','qtde','qtd','quantidade','quantidadevendida','qtdvendida','qtdevendida','volume','volumedevendas','vendas','unidadesvendidas'],
+    g:['categoria','grupo','familia','grupodeprodutos','grupoproduto','classe','departamento']};
+  function acharCab(rows){
+    for(let r=0;r<Math.min(10,rows.length);r++){
+      const h=rows[r].map(x=>norm(x).replace(/[^a-z]/g,'')),t={};
+      for(const k in ALIAS)t[k]=h.findIndex(x=>ALIAS[k].includes(x));
+      if(t.c>=0&&t.d>=0)return {ix:t,start:r+1}}
+    return null}
   const unesc=s=>s.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g,(m,g)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"}[g]||String.fromCodePoint(g[1]==='x'?parseInt(g.slice(2),16):parseInt(g.slice(1),10))));
   const txt=x=>[...x.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m=>unesc(m[1])).join('');
   async function zipOpen(buf){
@@ -405,9 +429,14 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     const ss=[],sx=await get('xl/sharedStrings.xml');
     if(sx)for(const m of sx.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g))ss.push(txt(m[1]));
     return {files,get,ss}}
-  async function readXlsx(buf,aba){
+  async function readXlsx(buf,aba,idx){
     const {files,get,ss}=await zipOpen(buf);
     let path=null;
+    if(idx!=null){const wbx=await get('xl/workbook.xml'),rel=await get('xl/_rels/workbook.xml.rels');
+      const sh=wbx?[...wbx.matchAll(/<sheet\b[^>]*>/g)].map(x=>x[0]):[];if(idx>=sh.length||!rel)return null;
+      const rid=(sh[idx].match(/\br:id="([^"]*)"/)||[])[1],rl=[...rel.matchAll(/<Relationship\b[^>]*>/g)].map(x=>x[0]).find(t=>(t.match(/\bId="([^"]*)"/)||[])[1]===rid),tt=rl&&(rl.match(/\bTarget="([^"]*)"/)||[])[1];
+      if(!tt)return null;path=tt.startsWith('/')?tt.slice(1):'xl/'+tt}
+    if(path===null){
     if(aba){const wbx=await get('xl/workbook.xml'),rel=await get('xl/_rels/workbook.xml.rels');
       if(wbx&&rel){
         const tg=[...wbx.matchAll(/<sheet\b[^>]*>/g)].map(x=>x[0]).find(t=>norm(unesc((t.match(/\bname="([^"]*)"/)||[])[1]||''))===norm(aba));
@@ -415,6 +444,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
         const rl=rid&&[...rel.matchAll(/<Relationship\b[^>]*>/g)].map(x=>x[0]).find(t=>(t.match(/\bId="([^"]*)"/)||[])[1]===rid);
         const tt=rl&&(rl.match(/\bTarget="([^"]*)"/)||[])[1];
         if(tt)path=tt.startsWith('/')?tt.slice(1):'xl/'+tt}}
+    }
     if(!path||!files[path])path=files['xl/worksheets/sheet1.xml']?'xl/worksheets/sheet1.xml':Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort()[0];
     const xml=await get(path);if(!xml)throw new Error('sheet');
     const rows=[];
@@ -472,15 +502,69 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     tabs.forEach(t=>{const k=key(t.c);if(usadas.has(t)||cods.has(k))return;cods.add(k);info.extras++;
       items.push(derivar({c:t.c,d:t.d||t.c,p:t.p,k:t.k,q:null,cat:'',par:t.par,qt:t.qt}))});
     return {items,info}}
+  /* ---------- Classificação automática da Matriz: V = volume de vendas · M = margem de contribuição ----------
+     Foco = V alto × M alto · Alavanca = V alto × M baixo · Freio = V baixo × M baixo · Desafiador = V baixo × M alto.
+     V = quantidade vendida; M = MC atual (% do preço, já descontados custo, impostos e taxas — mesma fórmula do simulador). */
+  const mcDe=i=>calc({code:i.c,name:i.d,cost:i.k,current:i.p,qty:0,par:i.par}).mcp;
+  const eleg=i=>i.p>0&&i.k>0&&i.qt>0;
+  const mediana=a=>{const s=a.slice().sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+  function cortes(items){
+    const L=(items||C.items).filter(eleg);if(L.length<2)return null;
+    const c=Object.assign({},DEF.cls,S.cls),q=L.map(i=>i.qt),tq=q.reduce((x,y)=>x+y,0);
+    const mc=L.map(mcDe);let fat=0,mcr=0;L.forEach((i,n)=>{fat+=i.p*i.qt;mcr+=mc[n]*i.p*i.qt});
+    const v=c.vm==='kas'?.7*tq/L.length:c.vm==='media'?tq/L.length:c.vm==='mediana'?mediana(q):(+c.vv||0);
+    const m=c.mm==='pond'?(fat?mcr/fat:0):c.mm==='mediana'?mediana(mc):(+c.mv||0)/100;
+    return {v,m,n:L.length}}
+  function classificar(items){
+    const ct=cortes(items),r={FOCO:0,ALAVANCA:0,FREIO:0,DESAFIADOR:0,semPreco:0,semCusto:0,semVenda:0,mudou:0};
+    items.forEach(i=>{
+      let q=null;
+      if(!(i.p>0))r.semPreco++;else if(!(i.k>0))r.semCusto++;else if(!(i.qt>0))r.semVenda++;
+      else if(ct){const av=i.qt>=ct.v,am=mcDe(i)>=ct.m;q=av?(am?'FOCO':'ALAVANCA'):(am?'DESAFIADOR':'FREIO');r[q]++}
+      if((i.q||null)!==q)r.mudou++;i.q=q});
+    return {ct,r}}
+  function resumoClass(rs){const r=rs.r,n=r.FOCO+r.ALAVANCA+r.FREIO+r.DESAFIADOR,sem=r.semPreco+r.semCusto+r.semVenda;
+    return n+' classificados: Foco '+r.FOCO+' · Alavanca '+r.ALAVANCA+' · Freio '+r.FREIO+' · Desafiador '+r.DESAFIADOR+
+      (sem?'. Sem classificação: '+[r.semPreco&&r.semPreco+' sem preço de venda',r.semCusto&&r.semCusto+' sem custo',r.semVenda&&r.semVenda+' sem vendas'].filter(Boolean).join(', '):'')}
+  /* Base de vendas (ABC de vendas do ERP: código, descrição, custo, preço de venda, quantidade): o sistema calcula tudo */
+  function importVendas(items,name,remote){
+    const prev=new Map();C.items.forEach(i=>{const k=key(i.c);if(!prev.has(k))prev.set(k,i)});
+    let herd=0,novos=0;const seen=new Set(),uniq1=[];
+    items.forEach(it=>{const k=key(it.c)||it.d;if(seen.has(k))return;seen.add(k);uniq1.push(it)});
+    uniq1.forEach(it=>{const a=prev.get(key(it.c));
+      if(a){if(a.par){it.par=Object.assign({},a.par);herd++}if(a.pb)it.pb=a.pb;if(!it.cat&&a.cat)it.cat=a.cat}else novos++;
+      it.cat=it.cat||'';it.q=null;if(it.p>0&&it.k>0)derivar(it)});
+    const rs=classificar(uniq1);
+    uniq1.sort((x,y)=>(y.qt||0)-(x.qt||0));
+    C={items:uniq1,name};index();if(remote)REMOTE=true;else if(!REMOTE)saveCat();render();
+    if(!remote){
+      const aus=[...prev.keys()].filter(k=>!seen.has(k)).length;
+      toast(uniq1.length+' itens importados da base de vendas · '+resumoClass(rs)+(herd?'. '+herd+' mantiveram os impostos e a margem do item':'')+(aus?'. '+aus+' itens do cadastro anterior não estão nesta base':'')+(REMOTE?' (somente nesta sessão)':''));
+      if(SB&&EMP)enviarParaBanco(uniq1)}}
+  async function reclassificar(){
+    const com=C.items.filter(eleg);if(com.length<2){toast('Não há itens com custo, preço e quantidade vendida para classificar.');return}
+    if(SB&&EMP&&!pode()){toast('Sem permissão de edição: a classificação não foi alterada.');return}
+    const bak=C.items.map(i=>i.q||null),rs=classificar(C.items);
+    if(!rs.r.mudou){toast('Nada mudou: '+resumoClass(rs));return}
+    if(!REMOTE)saveCat();render();
+    if(SB&&EMP){
+      const ch=C.items.filter((i,n)=>i.id&&(i.q||null)!==bak[n]);
+      try{for(let n=0;n<ch.length;n+=20)await Promise.all(ch.slice(n,n+20).map(i=>SB.from('produtos').update({quadrante:i.q}).eq('id',i.id).then(x=>{if(x.error)throw x.error})));
+        await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'reclassificou',detalhe:{itens:ch.length}});
+        toast('Matriz reclassificada para todos · '+resumoClass(rs))}
+      catch(e){toast('A classificação mudou aqui, mas não foi salva no banco. Confira a sua permissão de edição.')}}
+    else toast('Matriz reclassificada · '+resumoClass(rs))}
   $('impBtn').onclick=()=>$('file').click();
   $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{
       const buf=await f.arrayBuffer(),b=new Uint8Array(buf,0,2);
-      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b)){const rows=await readXlsx(buf,'ENGEN CARDAPIO');let tabs=[];try{tabs=await readAbasItens(buf)}catch(e){}importRows(rows,f.name,false,tabs)}
+      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b)){let rows=await readXlsx(buf,'ENGEN CARDAPIO');
+        if(!parseEngen(rows)&&!acharCab(rows)){for(let n=0;;n++){const o=await readXlsx(buf,null,n);if(o===null)break;if(o.length&&acharCab(o)){rows=o;break}}}
+        let tabs=[];try{tabs=await readAbasItens(buf)}catch(e){}importRows(rows,f.name,false,tabs)}
       else{let t=new TextDecoder('utf-8').decode(buf);
         if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);
         importText(t,f.name)}
-    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv.')}
+    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv, com código, descrição, custo, preço e quantidade.')}
     e.target.value=''};
 
   /* ---------- Código → descrição / Descrição → busca ---------- */
@@ -655,8 +739,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   /* ---------- Aba Matriz ---------- */
   function renderMatriz(){
     const Q=[['FOCO','Foco','Vendas ↑ · Margem ↑'],['ALAVANCA','Alavanca','Vendas ↑ · Margem ↓'],['FREIO','Freio','Vendas ↓ · Margem ↓'],['DESAFIADOR','Desafiador','Vendas ↓ · Margem ↑']];
-    const todos=C.items.filter(i=>i.q),its=todos.filter(mfOk),R=v=>v==null?'—':brl(v),P=v=>v==null?'—':fp(v),N=v=>v==null?'—':n2(v);
-    $('matStrip').innerHTML=!todos.length?'Nenhum item classificado. Importe a planilha com a aba ENGEN CARDAPIO.':its.length?'Matriz com <b>'+its.length+'</b>'+(mfAtivo()?' de '+todos.length:'')+' itens &nbsp;|&nbsp; '+Q.map(a=>a[1]+': '+its.filter(i=>i.q===a[0]).length).join(' · '):'Nenhum item encontrado para o filtro.  <b>Limpar filtro</b> para ver todos.';
+    const todos=C.items.filter(i=>i.q),its=todos.filter(mfOk),ctf=todos.length?cortes():null,R=v=>v==null?'—':brl(v),P=v=>v==null?'—':fp(v),N=v=>v==null?'—':n2(v);
+    $('matStrip').innerHTML=!todos.length?'Nenhum item classificado. Importe a base de vendas (código, descrição, custo, preço e quantidade) ou a planilha com a aba ENGEN CARDAPIO.':its.length?'Matriz com <b>'+its.length+'</b>'+(mfAtivo()?' de '+todos.length:'')+' itens &nbsp;|&nbsp; '+Q.map(a=>a[1]+': '+its.filter(i=>i.q===a[0]).length).join(' · ')+(ctf?' &nbsp;|&nbsp; Cortes: vendas ≥ <b>'+n2(ctf.v)+'</b> un. · MC ≥ <b>'+fp(ctf.m)+'</b>':''):'Nenhum item encontrado para o filtro.  <b>Limpar filtro</b> para ver todos.';
     const sum=(L,f)=>{const v=L.map(f).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((x,y)=>x+y,0):null},avg=(L,f)=>{const v=L.map(f).filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((x,y)=>x+y,0)/v.length:null};
     $('matBody').innerHTML=Q.map(a=>{
       const L=its.filter(i=>i.q===a[0]);if(!L.length)return '';
@@ -665,7 +749,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       return '<section class="card mx q-'+a[0]+'"><button type="button" class="mx-h" data-q="'+a[0]+'" aria-expanded="'+open+'" aria-controls="'+id+'"><span class="nm">'+a[1]+'</span><span class="lg">('+a[2]+')</span>'+
         '<span class="chips"><span class="chip">'+L.length+(L.length===1?' item':' itens')+'</span><span class="chip">Custo total '+R(tCt)+'</span><span class="chip">Preço atual '+R(tP)+'</span><span class="chip">Sugerido '+R(tS)+'</span></span><span class="chv" aria-hidden="true"></span></button>'+
         '<div class="tw" id="'+id+'"'+(open?'':' hidden')+'><table class="mt"><thead><tr><th>Cód.</th><th>Item</th><th>Custo inicial</th><th>Custo total</th><th>MC atual</th><th>Preço atual</th><th>Preço sugerido</th><th>Preço marketplace</th><th>Markup atual</th><th>Markup sugerido</th><th>Categoria</th></tr></thead><tbody>'+
-        L.map(i=>'<tr><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.k>0?i.k:null)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(pa(i))+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+
+        L.map(i=>'<tr title="'+(i.qt>0?'Vendas: '+n2(i.qt)+' un. · ':'')+'MC atual: '+P(i.mcp)+'"><td>'+esc(i.c)+'</td><td>'+esc(i.d)+'</td><td>'+R(i.k>0?i.k:null)+'</td><td>'+R(i.ct)+'</td><td>'+P(i.mcp)+'</td><td>'+R(pa(i))+'</td><td>'+R(i.ps)+'</td><td>'+R(i.pm)+'</td><td>'+N(i.mka)+'</td><td>'+N(i.mks)+'</td><td>'+esc(i.cat||'—')+'</td></tr>').join('')+
         '</tbody><tfoot><tr><td colspan="2">Total · '+L.length+(L.length===1?' item':' itens')+'</td><td>'+R(tK)+'</td><td>'+R(tCt)+'</td><td>'+P(avg(L,i=>i.mcp))+'<small>média</small></td><td>'+R(tP)+'</td><td>'+R(tS)+'</td><td>'+R(tM)+'</td><td>'+N(avg(L,i=>i.mka))+'<small>média</small></td><td>'+N(avg(L,i=>i.mks))+'<small>média</small></td><td></td></tr></tfoot></table></div></section>'}).join('')}
   const MATKEY='blueprintMatrizAberta_v1';let matOpen={};try{matOpen=JSON.parse(localStorage.getItem(MATKEY))||{}}catch(e){}
   function matSet(q,v){if(q==null)['FOCO','ALAVANCA','FREIO','DESAFIADOR'].forEach(k=>matOpen[k]=v);else matOpen[q]=v;if(!matBak){try{localStorage.setItem(MATKEY,JSON.stringify(matOpen))}catch(e){}}renderMatriz()}
@@ -698,7 +782,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 
   /* ---------- Render ---------- */
   function render(){
-    renderMatriz();
+    renderMatriz();clsUI();
     const rows=S.products.map(calc);
     if(S.sel>=rows.length)S.sel=rows.length-1;
     if(S.sel<0)S.sel=0;
@@ -718,4 +802,241 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     bars($('ch1'),cats,[{n:'Custo',c:'#143b46',v:rows.map(r=>r.cost)},{n:'Atual',c:'#25879b',v:rows.map(r=>r.pr)},{n:'Sugerido',c:'#f2c811',v:rows.map(r=>r.sug)},{n:'Marketplace',c:'#7a8f98',v:rows.map(r=>r.mktS)}]);
     bars($('ch2'),cats,[{n:'Atual',c:'#25879b',v:rows.map(r=>r.fat)},{n:'Com desconto',c:'#f2c811',v:rows.map(r=>r.fatd)}]);
 
-    $('tb').innerHTML=rows.map((r,i)=>`<tr data-i="${i}" class="${i===S.sel?'on':''}"><td>${esc(r.p.code)}</td><td>${esc(r.p.name)}</td><td>${brl(r.cost)}</td><td>${brl(r.pr)}</td><td>${brl(r.sug)}</td><td>${brl(r.mktS)}</td><td class="${r.mc<0?'neg':''}">${fp(r.mcp)}</td><td>${brl(r.pd)}</td><td>${brl(r.fat)}</td><td class="${r.dif<0?'neg':''}">${brl(r.dif)}</td><td><button class="ed" data-edit="${i}" aria-label="E
+    $('tb').innerHTML=rows.map((r,i)=>`<tr data-i="${i}" class="${i===S.sel?'on':''}"><td>${esc(r.p.code)}</td><td>${esc(r.p.name)}</td><td>${brl(r.cost)}</td><td>${brl(r.pr)}</td><td>${brl(r.sug)}</td><td>${brl(r.mktS)}</td><td class="${r.mc<0?'neg':''}">${fp(r.mcp)}</td><td>${brl(r.pd)}</td><td>${brl(r.fat)}</td><td class="${r.dif<0?'neg':''}">${brl(r.dif)}</td><td><button class="ed" data-edit="${i}" aria-label="Editar ${esc(r.p.name)}" title="Editar"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2.5l2.5 2.5L5 13.5 2 14l.5-3z"/></svg></button><button class="del" data-del="${i}" aria-label="Remover ${esc(r.p.name)}" title="Remover">×</button></td></tr>`).join('')
+      ||'<tr><td colspan="11" class="empty" style="text-align:center">Nenhum produto incluído.</td></tr>';
+
+    $('det').innerHTML=s?lines(s).map(l=>l[0]==='#'?`<tr class="sec"><td colspan="3">${l[1]}</td></tr>`:
+      `<tr class="${l[3]==='b'?'b':''}"><td>${l[0]}</td><td>${l[1]==null?'':typeof l[1]==='number'?fp(l[1]):l[1]}</td><td class="${l[2]<0?'neg':''}">${l[2]==null?'':l[3]==='n'?n2(l[2]):brl(l[2])}</td></tr>`).join('')
+      :'<tr><td class="empty">Inclua um produto para ver o cálculo.</td></tr>';
+  }
+
+  /* ---------- Painel, parâmetros e eventos ---------- */
+  $('params').innerHTML=PR.map(([k,l,mx])=>`<div class="field"><label for="${k}N">${l}</label><div class="rng"><input type="range" id="${k}R" min="0" max="${mx}" step="0.5"><input class="inp" type="number" id="${k}N" min="0" max="${mx}" step="0.01"></div></div>`).join('');
+  $('taxes').innerHTML=TX.map(([k,l])=>`<div class="field"><label for="${k}N">${l}</label><input class="inp" type="number" id="${k}N" min="0" max="100" step="0.01"></div>`).join('');
+  PR.concat(TX).forEach(([k,,mx])=>{
+    const set=v=>{S[k]=Math.min(mx||100,Math.max(0,parseFloat(v)||0));const tx1=TX.some(t=>t[0]===k);S.products.forEach(p=>{if(p.par){delete p.par[k];if(tx1)delete p.par.tot}});if(curPar){delete curPar[k];if(tx1)delete curPar.tot}save();render()};
+    $(k+'N').oninput=e=>set(e.target.value);
+    $(k+'N').onblur=()=>{$(k+'N').value=S[k]};
+    if($(k+'R'))$(k+'R').oninput=e=>set(e.target.value)});
+
+  function clsUI(){const c=Object.assign({},DEF.cls,S.cls);
+    $('clVm').value=c.vm;$('clMm').value=c.mm;$('clVv').hidden=c.vm!=='fixo';$('clMv').hidden=c.mm!=='fixo';
+    if(document.activeElement!==$('clVv'))$('clVv').value=c.vv||'';if(document.activeElement!==$('clMv'))$('clMv').value=c.mv||'';
+    const ct=cortes();$('clInfo').innerHTML=ct?'Cortes atuais (sobre '+ct.n+' itens com custo, preço e vendas): vendas ≥ <b>'+n2(ct.v)+'</b> un. · MC ≥ <b>'+fp(ct.m)+'</b>.<br>Foco = V alto × M alto · Alavanca = V alto × M baixo · Freio = V baixo × M baixo · Desafiador = V baixo × M alto. Itens sem preço, custo ou vendas ficam fora da Matriz.':'Importe a base de vendas para calcular os cortes.'}
+  ['clVm','clMm','clVv','clMv'].forEach(id=>$(id).onchange=$(id).oninput=()=>{
+    S.cls=Object.assign({},DEF.cls,S.cls,{vm:$('clVm').value,mm:$('clMm').value,vv:parseFloat($('clVv').value)||0,mv:parseFloat($('clMv').value)||0});save();clsUI()});
+  $('clBtn').onclick=reclassificar;
+  function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),Math.min(14000,2400+m.length*45))}
+  function setOpen(o){document.body.classList.toggle('open',o);$('drawer').setAttribute('aria-hidden',!o);$('openBtn').setAttribute('aria-expanded',o);if(o)fq($('pCode'))}
+  $('openBtn').onclick=()=>setOpen(true);
+  $('closeBtn').onclick=()=>setOpen(false);
+  $('scrim').onclick=()=>setOpen(false);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false)});
+  $('tb').onclick=e=>{
+    const d=e.target.closest('[data-del]');
+    const ed=e.target.closest('[data-edit]');
+    if(ed){startEdit(+ed.dataset.edit);return}
+    if(d){endEdit();S.products.splice(+d.dataset.del,1);if(S.sel>=S.products.length)S.sel=S.products.length-1;save();render();return}
+    const tr=e.target.closest('tr[data-i]');if(tr){S.sel=+tr.dataset.i;save();render()}};
+  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Parâmetros restaurados e tabela limpa (o cadastro importado foi mantido)')};
+
+  /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
+  async function loadRemote(){
+    /* No Apps Script: o cadastro vem da planilha privada, só depois de o servidor conferir o e-mail */
+    if(window.google&&google.script&&google.script.run){
+      google.script.run.withSuccessHandler(r=>{if(r&&r.length)importRows(r,'planilha privada · Google',true)}).withFailureHandler(()=>{}).catalogo();
+      return}
+    if(location.protocol==='file:')return;
+    try{
+      let rows=null,nm='',tabsR=[];
+      const rc=await fetch('produtos.csv',{cache:'no-cache'});
+      if(rc.ok){const buf=await rc.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
+        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t);nm='produtos.csv'}
+      else{const rx=await fetch('produtos.xlsx',{cache:'no-cache'});
+        if(rx.ok){const bx=await rx.arrayBuffer();rows=await readXlsx(bx,'ENGEN CARDAPIO');try{tabsR=await readAbasItens(bx)}catch(e){}nm='produtos.xlsx'}}
+      if(rows&&rows.length)importRows(rows,nm+' · GitHub',true,tabsR)
+    }catch(e){}
+  }
+  if(!SUPABASE_URL)loadRemote();
+  /* Atualizar dados: lê de novo a planilha do Google. Só consegue quem tem acesso à planilha. */
+  let gisP=null,gTok=null,gExp=0;
+  function carregarGIS(){
+    if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();
+    if(gisP)return gisP;
+    gisP=new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;
+      s.onload=()=>ok();s.onerror=()=>{gisP=null;ko(new Error('gis'))};document.head.appendChild(s)});
+    return gisP}
+  function pedirToken(){return new Promise((ok,ko)=>{
+    if(gTok&&Date.now()<gExp){ok(gTok);return}
+    google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:'https://www.googleapis.com/auth/spreadsheets.readonly',
+      callback:r=>{if(r&&r.access_token){gTok=r.access_token;gExp=Date.now()+((r.expires_in||3600)-60)*1000;ok(gTok)}else ko(new Error((r&&r.error)||'sem token'))},
+      error_callback:e=>ko(new Error((e&&e.type)||'cancelado'))}).requestAccessToken()})}
+  async function lerPlanilha(){
+    await carregarGIS();const t=await pedirToken();
+    const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+PLANILHA_ID+'/values/'+encodeURIComponent(ABA_PRODUTOS),{headers:{Authorization:'Bearer '+t}});
+    if(r.status===401||r.status===403||r.status===404){gTok=null;const e=new Error('perm');e.perm=true;throw e}
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();
+    return (j.values||[]).map(l=>l.map(x=>x==null?'':String(x)))}
+  $('updBtn').addEventListener('pointerdown',()=>{if(!(window.google&&google.script&&google.script.run)&&GOOGLE_CLIENT_ID)carregarGIS().catch(()=>{})});
+  $('updBtn').onclick=()=>{
+    if(SB&&EMP){recarregarOnline(true);return}
+    const b=$('updBtn'),noApps=!(window.google&&google.script&&google.script.run);
+    if(noApps&&!GOOGLE_CLIENT_ID){toast('A atualização online ainda não foi configurada. Use Importar dados ou fale com o administrador.');return}
+    const txt=b.textContent;b.disabled=true;b.textContent='Atualizando…';
+    const fim=()=>{b.disabled=false;b.textContent=txt};
+    const ok=r=>{fim();
+      if(!r||r.length<2){toast('A aba Produtos da planilha está vazia.');return}
+      const antes=C;importRows(r,'planilha Google · atualizada',!noApps);
+      if(C===antes){toast('Não encontrei produtos válidos na aba Produtos. Confira o cabeçalho.');return}
+      toast(C.items.length+' produtos atualizados da planilha.')};
+    const ko=e=>{fim();toast(e&&e.perm?'Sem permissão para atualizar: é preciso ter acesso à planilha.':'Não foi possível acessar a planilha. Entre com a conta que tem acesso e tente de novo.')};
+    if(noApps)lerPlanilha().then(ok,ko);
+    else google.script.run.withSuccessHandler(ok).withFailureHandler(()=>ko({perm:true})).catalogo()};
+  /* ===== LOGIN E BANCO ONLINE (Supabase): quem tem acesso aos dados consulta; editor/admin atualizam ===== */
+  const pode=()=>EMP&&(EMP.papel==='admin'||EMP.papel==='editor');
+  function authMsg(t,ok){const m=$('authMsg');m.textContent=t||'';m.className=ok?'ok':''}
+  function showAuth(f){document.body.classList.remove('ready');$('auth').hidden=false;$('fLogin').hidden=f!=='login';$('fSenha').hidden=f!=='senha';$('fSem').hidden=f!=='sem';if(f!=='login')authMsg('')}
+  function liberar(){$('auth').hidden=true;document.body.classList.add('ready');$('outBtn').hidden=false}
+  async function lerTudo(tab,cols,ord){
+    const out=[];
+    for(let i=0;;i+=1000){const r=await SB.from(tab).select(cols).eq('empresa_id',EMP.id).order(ord).range(i,i+999);
+      if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}
+    return out}
+  async function recarregarOnline(avisar){
+    try{
+      const prods=await lerTudo('produtos','id,codigo,descricao,preco,preco_sugerido,preco_marketplace,categoria,quadrante,ordem','ordem'),custo=new Map();
+      try{(await lerTudo('custos','produto_id,custo,custo_total,mc_atual,markup_atual,markup_sugerido,parametros,qtd_vendida','produto_id')).forEach(c=>custo.set(c.produto_id,c))}catch(e){}
+      const nn=v=>v==null?null:Number(v);
+      C={items:prods.map(p=>{const c=custo.get(p.id)||{};
+        return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
+        name:'banco online · '+EMP.nome};
+      index();REMOTE=true;render();
+      if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
+    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.')}}
+  /* Envia a base para o banco: SUBSTITUI a base da empresa (como a planilha ENGEN CARDAPIO, que é a base completa) */
+  async function enviarParaBanco(items){
+    if(!pode())return;
+    if(!confirm('Substituir a base online ('+C.items.length+' itens atuais) por '+items.length+' itens deste arquivo? Isso vale para todos os usuários da empresa.'))return;
+    try{
+      const itens=items.filter(i=>String(i.c).trim()).map((i,n)=>({codigo:String(i.c).trim(),descricao:i.d||String(i.c),preco:i.p||0,preco_sugerido:i.ps==null?null:i.ps,preco_marketplace:i.pm==null?null:i.pm,
+        categoria:i.cat||null,quadrante:i.q||null,ordem:n+1,custo:i.k>0?i.k:null,custo_total:i.ct==null?null:i.ct,mc_atual:i.mcp==null?null:i.mcp,markup_atual:i.mka==null?null:i.mka,markup_sugerido:i.mks==null?null:i.mks,parametros:i.par?Object.assign({pb:i.pb||'A'},i.par):null,qtd_vendida:i.qt>0?i.qt:null}));
+      const r=await SB.rpc('substituir_base',{p_empresa:EMP.id,p_itens:itens});
+      if(r.error)throw r.error;
+      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'substituiu_base',detalhe:{qtd:itens.length}});
+      await recarregarOnline(false);
+      toast(itens.length+' itens enviados: a base foi atualizada para todos.');
+    }catch(e){toast('Não foi possível enviar os dados. Confira se você tem permissão de edição.')}}
+  async function salvarItensNoBanco(its){
+    try{
+      for(const it of its){
+        const a=await SB.from('produtos').update({descricao:it.d,preco:it.p,preco_sugerido:it.ps,preco_marketplace:it.pm}).eq('id',it.id);if(a.error)throw a.error;
+        const b=await SB.from('custos').upsert({produto_id:it.id,empresa_id:EMP.id,custo:it.k,custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks,parametros:it.par?Object.assign({pb:it.pb||'A'},it.par):null,qtd_vendida:it.qt>0?it.qt:null},{onConflict:'produto_id'});if(b.error)throw b.error}
+      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
+    }catch(e){toast('A base online não foi atualizada. Confira a sua permissão de edição.')}}
+  async function entrou(ses){
+    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,empresas(nome)').eq('user_id',ses.user.id);
+    if(r.error){showAuth('login');authMsg('Não foi possível verificar o seu acesso. Tente de novo.');return}
+    if(!r.data||!r.data.length){showAuth('sem');return}
+    usrMeuId=ses.user.id;const m=r.data[0];EMP={id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||''};
+    liberar();$('tabUsr').hidden=m.papel!=='admin';recarregarOnline(false)}
+  async function iniciarLogin(){
+    await new Promise((ok,ko)=>{const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
+      s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
+    SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;$('tabUsr').hidden=true;showAuth('login')}});
+    const g=await SB.auth.getSession();
+    if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
+    if(g.data.session)entrou(g.data.session);else showAuth('login')}
+  $('fLogin').onsubmit=async e=>{e.preventDefault();authMsg('Entrando…',true);
+    const r=await SB.auth.signInWithPassword({email:$('aEmail').value.trim(),password:$('aSenha').value});
+    if(r.error){authMsg('E-mail ou senha incorretos.');return}
+    $('aSenha').value='';authMsg('');entrou(r.data.session)};
+  $('aEsqueci').onclick=async()=>{const em=$('aEmail').value.trim();
+    if(!em){authMsg('Digite o seu e-mail acima.');return}
+    await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
+    authMsg('Se o e-mail estiver cadastrado, enviamos um link para criar uma nova senha.',true)};
+  $('fSenha').onsubmit=async e=>{e.preventDefault();const a=$('nSenha').value;
+    if(a.length<8){authMsg('Use ao menos 8 caracteres.');return}
+    const r=await SB.auth.updateUser({password:a});
+    if(r.error){authMsg('Não foi possível salvar a senha. Peça um novo link ao administrador.');return}
+    $('nSenha').value='';history.replaceState(null,'',location.pathname+location.search);
+    const g=await SB.auth.getSession();if(g.data.session)entrou(g.data.session);else showAuth('login')};
+  $('outBtn').onclick=async()=>{S.products=[];save();try{localStorage.removeItem(CK)}catch(e){}
+    try{await SB.auth.signOut()}catch(e){}location.reload()};
+  $('semSair').onclick=()=>$('outBtn').onclick();
+  /* ---------- Página Usuários (somente administrador) ---------- */
+  const PAPEL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
+  const usrMsg=(t,ok)=>{const m=$('usrMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
+  async function usrChamar(body){
+    const r=await SB.functions.invoke('gerenciar-usuarios',{body});
+    if(r.error){let t='Não foi possível concluir. Tente de novo.';
+      try{const j=await r.error.context.json();if(j&&j.erro)t=j.erro}catch(e){}
+      throw new Error(t)}
+    if(r.data&&r.data.erro)throw new Error(r.data.erro);
+    return r.data||{}}
+  let usrLista=[];
+  async function usrCarregar(){
+    if(!SB||!EMP||EMP.papel!=='admin')return;
+    const r=await SB.from('membros').select('user_id,email,papel,ver_custo').eq('empresa_id',EMP.id).order('email');
+    if(r.error){$('usrBody').innerHTML='<tr><td colspan="4" class="empty" style="text-align:center">Não foi possível carregar os usuários.</td></tr>';return}
+    usrLista=r.data||[];usrDesenhar()}
+  function usrDesenhar(){
+    $('usrCount').textContent=usrLista.length+(usrLista.length===1?' pessoa':' pessoas');
+    const eu=usrMeuId;
+    $('usrBody').innerHTML=usrLista.map(u=>{const s=u.user_id===eu,cu=u.papel!=='leitor';
+      return '<tr data-u="'+esc(u.user_id)+'" data-e="'+esc(u.email||'')+'"><td>'+esc(u.email||'—')+(s?' <small style="color:var(--muted)">(você)</small>':'')+'</td>'+
+        '<td><select class="inp u-pp" '+(s?'disabled':'')+'>'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===u.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select></td>'+
+        '<td><input type="checkbox" class="u-cc" aria-label="Pode ver o custo" '+(u.ver_custo||cu?'checked':'')+(cu||s?' disabled':'')+'></td>'+
+        '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="senha">Trocar senha</button>'+(s?'<span></span>':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="4" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
+  let usrMeuId=null;
+  $('uPapel').onchange=()=>{const c=$('uCusto'),l=$('uPapel').value==='leitor';c.checked=!l;c.disabled=!l};
+  $('uPapel').onchange();
+  $('uVer').onclick=()=>{const i=$('uSenha'),v=i.type==='password';i.type=v?'text':'password';$('uVer').textContent=v?'Ocultar':'Mostrar';$('uVer').setAttribute('aria-pressed',v)};
+  $('usrForm').onsubmit=async e=>{e.preventDefault();
+    const b=$('uAdd');b.disabled=true;usrMsg('Cadastrando…',true);
+    try{const d=await usrChamar({acao:'criar',email:$('uEmail').value.trim(),senha:$('uSenha').value,papel:$('uPapel').value,ver_custo:$('uCusto').checked});
+      usrMsg(d.msg||'Usuário liberado.',true);$('uEmail').value='';$('uSenha').value='';$('uSenha').type='password';$('uVer').textContent='Mostrar';
+      await usrCarregar()}
+    catch(x){usrMsg(x.message,false)}
+    b.disabled=false};
+  let usrConf=null;
+  $('usrBody').onchange=e=>{const tr=e.target.closest('tr');if(!tr||!e.target.classList.contains('u-pp'))return;
+    const c=tr.querySelector('.u-cc'),l=e.target.value==='leitor';if(!l){c.checked=true}c.disabled=!l};
+  $('usrBody').onclick=async e=>{
+    const bt=e.target.closest('button[data-a]');if(!bt)return;
+    const tr=bt.closest('tr'),uid=tr.dataset.u,em=tr.dataset.e,a=bt.dataset.a;
+    if(a!=='remover'&&usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf');usrConf=null}
+    try{
+      if(a==='salvar'){
+        const pp=tr.querySelector('.u-pp').value,cc=pp!=='leitor'?true:tr.querySelector('.u-cc').checked;
+        const r=await SB.from('membros').update({papel:pp,ver_custo:cc}).eq('empresa_id',EMP.id).eq('user_id',uid);
+        if(r.error)throw new Error('Não foi possível salvar. A empresa precisa ter pelo menos um administrador.');
+        usrMsg('Acesso de '+em+' atualizado.',true);await usrCarregar()}
+      else if(a==='senha'){
+        let w=tr.querySelector('.pwr');
+        if(!w){w=document.createElement('div');w.className='pwr';w.innerHTML='<input class="inp" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 8)" minlength="8" maxlength="72"><button type="button" class="pri" data-a="senha-ok" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer">Confirmar</button>';
+          tr.querySelector('.ac').after(w);w.querySelector('input').focus()}
+        else w.remove()}
+      else if(a==='senha-ok'){
+        const ip=tr.querySelector('.pwr input');
+        await usrChamar({acao:'senha',email:em,senha:ip.value});
+        tr.querySelector('.pwr').remove();usrMsg('Senha de '+em+' trocada.',true)}
+      else if(a==='remover'){
+        if(usrConf!==bt){if(usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf')}
+          usrConf=bt;bt.textContent='Confirmar remoção';bt.classList.add('conf');return}
+        usrConf=null;
+        await usrChamar({acao:'remover',email:em});usrMsg(em+' foi removido.',true);await usrCarregar()}
+    }catch(x){usrMsg(x.message,false)}};
+  $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
+    ['vSim','vMat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr')usrCarregar()};
+  if(SUPABASE_URL&&SUPABASE_ANON_KEY)iniciarLogin().catch(()=>{showAuth('login');authMsg('Não foi possível carregar o login. Verifique a conexão.')});
+  else document.body.classList.add('ready');
+  render();
+})();
+</script>
+
+</body>
+</html>
