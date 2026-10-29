@@ -831,8 +831,9 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     const r=calc({code:p.code,name:p.name,cost:p.cost,current:p.current,qty:0,par:p.par});
     let mudou=false;
     its.forEach(it=>{
-      if(Math.abs((it.p||0)-p.current)<1e-9&&Math.abs((it.k||0)-p.cost)<1e-9&&(it.d||'')===p.name&&(it.qt||0)===(p.qty||0))return;
-      Object.assign(it,{d:p.name||it.d,p:p.current,k:p.cost,qt:p.qty||0,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
+      const pj=JSON.stringify(p.par||null);
+      if(Math.abs((it.p||0)-p.current)<1e-9&&Math.abs((it.k||0)-p.cost)<1e-9&&(it.d||'')===p.name&&(it.qt||0)===(p.qty||0)&&JSON.stringify(it.par||null)===pj)return;
+      Object.assign(it,{par:p.par?Object.assign({},p.par):null,d:p.name||it.d,p:p.current,k:p.cost,qt:p.qty||0,ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks});mudou=true});
     if(!mudou)return;
     if(!REMOTE)saveCat();
     render();
@@ -1017,18 +1018,52 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     for(let i=0;;i+=1000){let q=SB.from(tab).select(cols).eq('empresa_id',EMP.id);if(tab==='produtos'&&CLI_ID)q=q.eq('cliente_id',CLI_ID);const r=await q.order(ord).range(i,i+999);
       if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}
     return out}
-  async function recarregarOnline(avisar){
+  /* Assinatura barata do que está no banco (quantidade + última alteração): serve para saber se outro usuário mexeu */
+  let SIG=null,PREV_CLI=null,lendo=false;
+  async function assinatura(){
     try{
+      const a=await SB.from('produtos').select('atualizado_em',{count:'exact'}).eq('empresa_id',EMP.id).eq('cliente_id',CLI_ID).order('atualizado_em',{ascending:false}).limit(1);
+      const b=await SB.from('custos').select('atualizado_em',{count:'exact'}).eq('empresa_id',EMP.id).order('atualizado_em',{ascending:false}).limit(1);
+      if(a.error||b.error)return null;
+      return [a.count,a.data[0]&&a.data[0].atualizado_em,b.count,b.data[0]&&b.data[0].atualizado_em].join('|')}catch(e){return null}}
+  /* A tabela "Simulação por produto" guarda cópias no navegador: puxa para ela o que mudou no banco (ao abrir: tudo; depois: só o que mudou) */
+  function sincTabela(prev){
+    const vc=!EMP||EMP.papel!=='leitor'||EMP.ver_custo===true;let n=0;
+    S.products.forEach(p=>{
+      const it=byCode.get(key(p.code));if(!it)return;
+      const o=prev&&prev.get(key(p.code)),ch=(a,b)=>!o||Math.abs((o[a]||0)-(b||0))>1e-9;let m=false;
+      if(ch('p',it.p)&&p.current!==it.p){p.current=it.p;m=true}
+      if(vc&&ch('k',it.k)&&p.cost!==it.k){p.cost=it.k;m=true}
+      if(ch('qt',it.qt)&&p.qty!==(it.qt||0)){p.qty=it.qt||0;m=true}
+      if(it.d&&(!o||o.d!==it.d)&&p.name!==it.d){p.name=it.d;m=true}
+      const pj=JSON.stringify(it.par||null);
+      if((!o||o.par!==pj)&&JSON.stringify(p.par||null)!==pj){if(it.par)p.par=Object.assign({},it.par);else delete p.par;m=true}
+      if(m)n++});
+    if(n){save();if(editIdx>=0&&!S.products[editIdx])endEdit()}
+    return n}
+  async function recarregarOnline(avisar,porOutro){
+    if(lendo)return false;lendo=true;
+    try{
+      const sig0=await assinatura();
+      const prev=PREV_CLI===CLI_ID&&REMOTE?new Map(C.items.map(i=>[key(i.c),{p:i.p,k:i.k,qt:i.qt,d:i.d,par:JSON.stringify(i.par||null)}])):null;
       const prods=await lerTudo('produtos','id,codigo,descricao,preco,preco_sugerido,preco_marketplace,categoria,quadrante,ordem','ordem'),custo=new Map();
       try{(await lerTudo('custos','produto_id,custo,custo_total,mc_atual,markup_atual,markup_sugerido,parametros,qtd_vendida','produto_id')).forEach(c=>custo.set(c.produto_id,c))}catch(e){}
       const nn=v=>v==null?null:Number(v);
       C={items:prods.map(p=>{const c=custo.get(p.id)||{};
         return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
         name:'banco online · '+nomeCli()};
-      index();REMOTE=true;render();
-      if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
+      index();REMOTE=true;PREV_CLI=CLI_ID;SIG=sig0;const ns=sincTabela(prev);render();
+      if(porOutro)toast('Dados atualizados: outro usuário fez alterações'+(ns?' ('+ns+' item'+(ns>1?'s':'')+' da tabela)':'')+'.');
+      else if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
       return true
-    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.');return false}}
+    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.');return false}finally{lendo=false}}
+  /* Mantém todos conectados: confere a cada 30 s (e ao voltar para a aba) se alguém alterou algo */
+  async function conferirMudancas(){
+    if(document.hidden||!SB||!EMP||!CLI_ID||lendo||editIdx>=0||!REMOTE)return;
+    const s=await assinatura();if(s&&SIG&&s!==SIG)await recarregarOnline(false,true)}
+  setInterval(conferirMudancas,30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)conferirMudancas()});
+  window.addEventListener('focus',conferirMudancas);
   /* Envia a base para o banco: SUBSTITUI a base da empresa (como a planilha ENGEN CARDAPIO, que é a base completa) */
   async function enviarParaBanco(items){
     if(!podeBase()){toast('Você não tem permissão para importar dados.');return}
@@ -1053,6 +1088,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
         if(can('ed_custo'))cu.custo=it.k;if(can('ed_qtd'))cu.qtd_vendida=it.qt>0?it.qt:null;if(can('ed_param'))cu.parametros=it.par?Object.assign({pb:it.pb||'A'},it.par):null;
         const b=await SB.from('custos').update(cu).eq('produto_id',it.id);if(b.error)throw b.error}
       await SB.from('auditoria').insert({empresa_id:EMP.id,cliente_id:CLI_ID,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
+      const sg=await assinatura();if(sg)SIG=sg;
     }catch(e){toast(msgErro(e,'A base online não foi atualizada. Confira a sua permissão de edição.'));recarregarOnline(false)}}
   /* ---------- Clientes ---------- */
   let CLI=[],CLI_ID=null;
