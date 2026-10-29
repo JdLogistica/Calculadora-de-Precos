@@ -110,7 +110,7 @@ table.det td:nth-child(2){color:var(--muted);width:78px;white-space:nowrap}
 table.det td:nth-child(3){width:110px;white-space:nowrap}
 table.det tr.sec td{background:var(--t1);color:var(--t9);font-weight:700;font-size:12px;text-align:left}
 table.det tr.b td{font-weight:700}
-@media(max-width:700px){.bar{flex-wrap:wrap}.bar .sub{display:none}.bar .logo{order:-2}.bar h1{order:-1;flex:1 1 calc(100% - 52px)}}
+@media(max-width:700px){.cli{order:0;flex:1 1 100%}.bar{flex-wrap:wrap}.bar .sub{display:none}.bar .logo{order:-2}.bar h1{order:-1;flex:1 1 calc(100% - 52px)}}
 .ed{border:0;background:transparent;color:var(--muted);padding:3px 6px;border-radius:3px;line-height:0;vertical-align:middle}
 .ed:hover{background:var(--t1);color:var(--t7)}
 .cancel{width:100%;margin-top:8px;border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:10px;font-weight:600}
@@ -131,6 +131,28 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .tabs{display:flex;gap:4px;padding:10px clamp(12px,3vw,28px) 0}
 .tab{border:1px solid var(--line);border-bottom:0;background:#fff;color:var(--t9);padding:8px 20px;border-radius:4px 4px 0 0;font-weight:600}
 .tab.on{background:var(--t9);color:#fff;border-color:var(--t9)}
+.cli{display:flex;align-items:center;gap:8px;flex:none}.cli label{font-size:12px;opacity:.8;white-space:nowrap}
+.cli select{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:6px 8px;font:inherit;font-weight:600;max-width:210px}
+.cli select option{color:#1c2b30;background:#fff}.cli select:disabled{opacity:1;appearance:none;-webkit-appearance:none;padding-right:8px}
+.inp[readonly]{background:#f1f5f6;color:#5c7480;cursor:not-allowed}
+.mdl{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.42);padding:16px}
+.mdl[hidden]{display:none}
+.mdl .box{background:#fff;border-radius:6px;width:min(560px,100%);max-height:92vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.mdl .mh{background:var(--t9);color:#fff;padding:12px 16px;font-weight:700;font-size:15px}
+.mdl .mb{padding:16px}.mdl .mf{display:flex;gap:8px;justify-content:flex-end;padding:0 16px 16px}
+.mdl .mf button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:9px 16px;font-weight:700;cursor:pointer}
+.mdl .mf button.pri{background:var(--t6);border-color:var(--t6);color:#fff}
+.mdl .note{font-size:12px;color:var(--muted);margin:-6px 0 12px}
+.acc{border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:0 0 12px}
+.acc legend{font-size:12px;font-weight:700;color:var(--t9);padding:0 6px}
+.acc .opt{display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:600;color:var(--t9)}
+.acc .lst{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 14px;margin:6px 0 2px 24px}
+.acc .lst label,.acc .flg label{display:flex;gap:8px;align-items:center;font-weight:500;color:var(--ink)}
+.acc .flg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px}
+.acc .vazio{font-size:12px;color:var(--muted);margin-left:24px}
+.usr-tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}.usr-tags span{background:var(--t1);border:1px solid var(--line);border-radius:10px;padding:1px 8px;font-size:11px;color:var(--t9);white-space:nowrap}
+.usr-tags span.todos{background:var(--y);border-color:var(--y);color:#222;font-weight:600}
+.cli-new form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:14px}.cli-new .field{margin:0;flex:1 1 260px}
 .usr-new{margin-top:12px}
 .usr-new form{padding:14px}
 .usr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px;align-items:end}
@@ -140,7 +162,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .usr-msg{margin-top:10px;font-size:13px;min-height:18px}.usr-msg.ok{color:#1f7a3a}.usr-msg.er{color:var(--red)}
 .mt.usr-t{width:100%;min-width:820px;table-layout:fixed}.usr-t th:nth-child(1){width:29%}.usr-t th:nth-child(2){width:19%}.usr-t th:nth-child(3){width:10%}.usr-t th:nth-child(4){width:42%}.usr-t td:first-child{overflow-wrap:anywhere;white-space:normal}.usr-t td{vertical-align:middle}.usr-t td:first-child{text-align:left}.usr-t select{width:auto;padding:6px 8px}
 .usr-t td:nth-child(2){text-align:center;min-width:0;white-space:nowrap}
-.usr-t .ac{display:grid;grid-template-columns:70px 108px 126px;gap:6px;justify-content:center}.usr-t .ac button{width:100%;white-space:nowrap}.usr-t td:nth-child(2) select{width:100%;max-width:170px}
+.usr-t .ac{display:grid;grid-template-columns:104px 108px 126px;gap:6px;justify-content:center}.usr-t .ac button{width:100%;white-space:nowrap}.usr-t td:nth-child(2) select{width:100%;max-width:170px}
 .usr-t .ac button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer}
 .usr-t .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}.usr-t .ac button.del{color:var(--red)}.usr-t .ac button.conf{background:var(--red);color:#fff;border-color:var(--red)}
 .usr-t .pwr{display:flex;gap:6px;justify-content:center;margin-top:6px}.usr-t .pwr input{max-width:170px;padding:5px 8px}
@@ -177,6 +199,11 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .mt{width:auto;min-width:0}
 .mt th,.mt td{padding:8px 9px;text-align:center;white-space:nowrap}
 .mt td:nth-child(2){text-align:left;white-space:normal;min-width:170px}
+/* tabelas de usuários e clientes (por último, para valer sobre as regras gerais da Matriz) */
+.mt.usr-t td{text-align:center;white-space:normal;min-width:0;vertical-align:middle}.mt.usr-t td:first-child{text-align:left;overflow-wrap:anywhere}
+.mt.usr-u{min-width:1100px}.mt.usr-u th:nth-child(1){width:20%}.mt.usr-u th:nth-child(2){width:9%}.mt.usr-u th:nth-child(3){width:15%}.mt.usr-u th:nth-child(4){width:17%}.mt.usr-u th:nth-child(5){width:7%}.mt.usr-u th:nth-child(6){width:32%}
+.mt.cli-t{min-width:560px}.mt.cli-t th:nth-child(1){width:46%}.mt.cli-t th:nth-child(2){width:18%}.mt.cli-t th:nth-child(3){width:36%}
+.cli-t .ac{grid-template-columns:110px}
 </style>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 </head>
@@ -205,6 +232,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   </button>
   <span class="logo"><img alt="LucrUP Consultoria" src="data:image/png;base64,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"></span>
   <h1>Simulador de Precificação<span class="sub">Calculadora de preço de venda</span></h1>
+  <div class="cli" id="cliBox" hidden><label for="cliSel">Cliente</label><select id="cliSel" aria-label="Cliente"></select></div>
   <button class="tbtn" id="impBtn" type="button">Importar dados</button>
   <button class="tbtn" id="updBtn" type="button">Atualizar dados</button>
   <button class="tbtn" id="outBtn" type="button" hidden>Sair</button>
@@ -294,25 +322,58 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   <div id="matBody"></div>
 </main>
 <main id="vUsr" hidden>
-  <div class="strip" id="usrStrip">Usuários com acesso ao sistema · somente o administrador vê esta página</div>
+  <div class="strip" id="usrStrip">Usuários e clientes · somente o administrador vê esta página</div>
+  <section class="card cli-new">
+    <h3>Clientes <span class="leg" id="cliCount"></span></h3>
+    <form id="cliForm" autocomplete="off">
+      <div class="field"><label for="cNome">Novo cliente</label><input class="inp" id="cNome" type="text" maxlength="80" required placeholder="Nome do cliente (ex.: Canto do Baião)"></div>
+      <button class="add usr-add" type="submit" id="cAdd" style="width:auto;padding:11px 22px">Cadastrar cliente</button>
+    </form>
+    <div class="usr-msg" id="cliMsg" role="status" aria-live="polite" style="padding:0 14px 10px;margin-top:0"></div>
+    <div class="tw"><table class="mt usr-t cli-t"><thead><tr><th>Cliente</th><th>Itens na base</th><th>Ações</th></tr></thead><tbody id="cliBody"></tbody></table></div>
+  </section>
   <section class="card usr-new">
     <h3>Cadastrar e liberar usuário</h3>
     <form id="usrForm" autocomplete="off">
       <div class="usr-grid">
         <div class="field"><label for="uEmail">E-mail</label><input class="inp" id="uEmail" type="email" autocomplete="off" required placeholder="pessoa@email.com"></div>
         <div class="field"><label for="uSenha">Senha (mínimo 8 caracteres)</label><div class="usr-pw"><input class="inp" id="uSenha" type="password" autocomplete="new-password" minlength="8" maxlength="72" required><button type="button" class="fbtn" id="uVer" aria-pressed="false">Mostrar</button></div></div>
-        <div class="field"><label for="uPapel">Tipo de acesso</label><select class="inp" id="uPapel"><option value="leitor">Leitor — só consulta</option><option value="editor">Editor — consulta, altera e importa</option><option value="admin">Administrador — tudo, inclusive usuários</option></select></div>
+        <div class="field"><label for="uPapel">Tipo de acesso</label><select class="inp" id="uPapel"><option value="leitor">Leitor — só consulta</option><option value="editor">Editor — altera o que for marcado</option><option value="admin">Administrador — tudo, inclusive usuários</option></select></div>
         <div class="field usr-chk"><label><input type="checkbox" id="uCusto"> Pode ver o custo</label></div>
       </div>
+      <div id="nAcc"></div>
       <button class="add usr-add" type="submit" id="uAdd">Cadastrar e liberar</button>
       <div class="usr-msg" id="usrMsg" role="status" aria-live="polite"></div>
     </form>
   </section>
   <section class="card" style="margin-top:12px">
     <h3>Usuários liberados <span class="leg" id="usrCount"></span></h3>
-    <div class="tw"><table class="mt usr-t"><thead><tr><th>E-mail</th><th>Tipo de acesso</th><th>Vê o custo</th><th>Ações</th></tr></thead><tbody id="usrBody"></tbody></table></div>
+    <div class="tw"><table class="mt usr-t usr-u"><thead><tr><th>E-mail</th><th>Tipo de acesso</th><th>Clientes</th><th>Pode editar</th><th>Vê o custo</th><th>Ações</th></tr></thead><tbody id="usrBody"></tbody></table></div>
   </section>
 </main>
+<div class="mdl" id="usrMdl" hidden role="dialog" aria-modal="true" aria-labelledby="eTit"><div class="box">
+  <div class="mh" id="eTit">Acesso do usuário</div>
+  <div class="mb">
+    <div class="usr-grid">
+      <div class="field"><label for="ePapel">Tipo de acesso</label><select class="inp" id="ePapel"><option value="leitor">Leitor — só consulta</option><option value="editor">Editor — altera o que for marcado</option><option value="admin">Administrador — tudo, inclusive usuários</option></select></div>
+      <div class="field usr-chk"><label><input type="checkbox" id="eCusto"> Pode ver o custo</label></div>
+    </div>
+    <div id="eAcc"></div>
+    <div class="usr-msg" id="eMsg" role="status" aria-live="polite"></div>
+  </div>
+  <div class="mf"><button type="button" id="eCancel">Cancelar</button><button type="button" class="pri" id="eOk">Salvar acesso</button></div>
+</div></div>
+<div class="mdl" id="cliMdl" hidden role="dialog" aria-modal="true" aria-labelledby="mTit"><div class="box">
+  <div class="mh" id="mTit">De qual cliente são estes dados?</div>
+  <div class="mb">
+    <div class="note" id="mDet"></div>
+    <div class="field"><label for="mSel">Cliente</label><select class="inp" id="mSel"></select></div>
+    <div class="field" id="mNovoW" hidden><label for="mNovo">Nome do novo cliente</label><input class="inp" id="mNovo" type="text" maxlength="80"></div>
+    <div class="note" id="mAviso"></div>
+    <div class="usr-msg er" id="mMsg" role="alert"></div>
+  </div>
+  <div class="mf"><button type="button" id="mCancel">Cancelar</button><button type="button" class="pri" id="mOk">Continuar a importação</button></div>
+</div></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -325,7 +386,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ocnBpbGR2enF0dWdubnVlenpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5NjQwMDMsImV4cCI6MjEwODU0MDAwM30.7jqFoC9LSz9mNyZIOZ2DYf4NfpxbV7vWMHSvCLt8mQ4';  /* chave anon public do Supabase (nunca a service_role) */
   let SB=null,EMP=null;
   /* ============================================================================ */
-  const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1';
+  const KEY='blueprintPrecificacaoData_v3', CK='blueprintCatalogo_v1', CLIKEY='blueprintClienteAtual_v1';
+  let SK=KEY;
   const DEF={mc:60,mkt:15.5,desc:10,csll:0,pis:1.65,cofins:7.6,icms:0,cartao:1.18,comissao:0,sel:0,cls:{vm:'kas',vv:0,mm:'pond',mv:0},
     products:[]};
   const PR=[['mc','Margem de contribuição desejada (%)',100],['mkt','Taxa do marketplace (%)',50],['desc','Desconto simulado (%)',50]];
@@ -347,8 +409,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   const pKey=p=>key(p.code)||String(p.name||'').trim().toLowerCase();
   const idxKey=(L,k,except)=>L.findIndex((x,i)=>i!==except&&pKey(x)===k);
   function semRepetidos(L){const o=[];L.forEach(p=>{const i=idxKey(o,pKey(p));if(i<0)o.push(p);else o[i]=p});return o}
-  function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.products)){const r=Object.assign(clone(DEF),s),n=r.products.length;r.products=semRepetidos(r.products);if(r.products.length!==n)r.sel=0;return r}}catch(e){}return clone(DEF)}
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function load(){try{const s=JSON.parse(localStorage.getItem(SK));if(s&&Array.isArray(s.products)){const r=Object.assign(clone(DEF),s),n=r.products.length;r.products=semRepetidos(r.products);if(r.products.length!==n)r.sel=0;return r}}catch(e){}return clone(DEF)}
+  function save(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){}}
   function loadCat(){try{const c=JSON.parse(localStorage.getItem(CK));if(c&&Array.isArray(c.items))return c}catch(e){}return {items:[],name:''}}
   function saveCat(){try{localStorage.setItem(CK,JSON.stringify(C))}catch(e){toast('Cadastro grande demais para salvar no navegador; importe de novo ao abrir.')}}
   function index(){byCode=new Map();C.items.forEach(i=>{i.n=norm(i.c+' '+i.d);const k=key(i.c);if(!byCode.has(k))byCode.set(k,i)})}
@@ -543,7 +605,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       if(SB&&EMP)enviarParaBanco(uniq1)}}
   async function reclassificar(){
     const com=C.items.filter(eleg);if(com.length<2){toast('Não há itens com custo, preço e quantidade vendida para classificar.');return}
-    if(SB&&EMP&&!pode()){toast('Sem permissão de edição: a classificação não foi alterada.');return}
+    if(SB&&EMP&&!podeBase()){toast('Sem permissão para importar e reclassificar: a classificação não foi alterada.');return}
     const bak=C.items.map(i=>i.q||null),rs=classificar(C.items);
     if(!rs.r.mudou){toast('Nada mudou: '+resumoClass(rs));return}
     if(!REMOTE)saveCat();render();
@@ -555,17 +617,59 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       catch(e){toast('A classificação mudou aqui, mas não foi salva no banco. Confira a sua permissão de edição.')}}
     else toast('Matriz reclassificada · '+resumoClass(rs))}
   $('impBtn').onclick=()=>$('file').click();
-  $('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  /* ---------- Cliente da planilha: o nome está no nome da aba ou no nome do arquivo ---------- */
+  async function nomesAbas(buf){try{const {get}=await zipOpen(buf),w=await get('xl/workbook.xml');return w?[...w.matchAll(/<sheet\b[^>]*>/g)].map(m=>unesc((m[0].match(/\bname="([^"]*)"/)||[])[1]||'')):[]}catch(e){return []}}
+  const tituloNome=s=>String(s).toLowerCase().split(/\s+/).filter(Boolean).map((w,i)=>(i>0&&/^(de|do|da|dos|das|e)$/.test(w))?w:w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  function nomeSugerido(arquivo,aba){
+    const gen=/^(planilha|plan|sheet|folha|dados|base|data|relatorio|abc|vendas?|resultado|consulta|query|tabela|engen cardapio)\s*\d*$/;
+    const a=String(aba||'').trim();if(a&&!gen.test(norm(a)))return tituloNome(a);
+    const f=String(arquivo||'').replace(/\.[a-z0-9]{2,5}$/i,'').replace(/^[0-9a-f]{8}-\d+[_-]/i,'').replace(/\(\d+\)/g,' ').replace(/[_\-.]+/g,' ');
+    const ruido=/^(abc|vendas?|relatorio|planilha|calculadora|dados|base|cardapio|engenharia|precos?|custos?|margem|mes|mensal|janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez|\d+)$/;
+    return tituloNome(f.split(/\s+/).filter(w=>w&&!ruido.test(norm(w))).join(' '))}
+  const chv=s=>norm(s).replace(/[^a-z0-9]/g,'');
+  function lev(a,b){const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+  function melhorCliente(nome){
+    const k=chv(nome);if(!k)return null;let best=null,bs=0;
+    CLI.forEach(c=>{const kc=chv(c.nome),s=kc===k?1:(kc.includes(k)||k.includes(kc))&&Math.min(k.length,kc.length)>=4?.92:1-lev(k,kc)/Math.max(k.length,kc.length);if(s>bs){bs=s;best=c}});
+    return bs>=.8?{c:best,exato:bs===1}:null}
+  function escolherCliente(arquivo,aba){
+    return new Promise(res=>{
+      const sug=nomeSugerido(arquivo,aba),mt=melhorCliente(sug),admin=EMP&&EMP.papel==='admin',S0=$('mSel');
+      S0.innerHTML=CLI.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join('')+(admin?'<option value="__novo">➕ Cadastrar novo cliente…</option>':'');
+      S0.value=mt?mt.c.id:(admin?'__novo':(CLI_ID||(CLI[0]&&CLI[0].id)||''));
+      $('mNovo').value=sug;$('mMsg').textContent='';
+      $('mDet').innerHTML=sug?'Nome encontrado no '+(aba&&sug===tituloNome(aba)?'nome da aba':'nome do arquivo')+': <b>'+esc(sug)+'</b>. Confirme o cliente antes de importar.':'Não encontrei o nome do cliente no arquivo. Escolha o cliente abaixo.';
+      const atual=()=>{const novo=S0.value==='__novo';$('mNovoW').hidden=!novo;
+        $('mAviso').innerHTML=novo?'Será criado um cliente novo com esse nome. A base dele começa vazia.':(mt&&!mt.exato&&S0.value===mt.c.id?'O nome do arquivo parece ser o do cliente <b>'+esc(mt.c.nome)+'</b> (escrito um pouco diferente).<br>':'')+'A importação substitui <b>somente</b> os dados deste cliente; os outros clientes não são alterados.'};
+      atual();S0.onchange=atual;
+      const fim=v=>{$('cliMdl').hidden=true;document.removeEventListener('keydown',esc1);res(v)};
+      const esc1=e=>{if(e.key==='Escape')fim(null)};document.addEventListener('keydown',esc1);
+      $('mCancel').onclick=()=>fim(null);
+      $('mOk').onclick=async()=>{
+        if(S0.value!=='__novo'){if(!S0.value){$('mMsg').textContent='Escolha o cliente.';return}fim({id:S0.value});return}
+        const nome=$('mNovo').value.trim().replace(/\s+/g,' ');if(!nome){$('mMsg').textContent='Digite o nome do cliente.';return}
+        $('mOk').disabled=true;
+        const r=await SB.from('clientes').insert({empresa_id:EMP.id,nome}).select('id,nome').single();
+        $('mOk').disabled=false;
+        if(r.error){$('mMsg').textContent=/duplicate|unique|23505/i.test(r.error.message||'')||r.error.code==='23505'?'Já existe um cliente com esse nome. Escolha-o na lista.':'Não foi possível cadastrar o cliente. Só o administrador pode criar clientes.';return}
+        CLI.push(r.data);CLI.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));desenharSeletor(CLI_ID);fim({id:r.data.id,novo:true})};
+      $('cliMdl').hidden=false;setTimeout(()=>S0.focus(),30)})}
+  $('file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
     try{
-      const buf=await f.arrayBuffer(),b=new Uint8Array(buf,0,2);
-      if(/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b)){let rows=await readXlsx(buf,'ENGEN CARDAPIO');
-        if(!parseEngen(rows)&&!acharCab(rows)){for(let n=0;;n++){const o=await readXlsx(buf,null,n);if(o===null)break;if(o.length&&acharCab(o)){rows=o;break}}}
-        let tabs=[];try{tabs=await readAbasItens(buf)}catch(e){}importRows(rows,f.name,false,tabs)}
-      else{let t=new TextDecoder('utf-8').decode(buf);
-        if(t.includes('\uFFFD'))t=new TextDecoder('windows-1252').decode(buf);
-        importText(t,f.name)}
-    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv, com código, descrição, custo, preço e quantidade.')}
-    e.target.value=''};
+      const buf=await f.arrayBuffer(),b=new Uint8Array(buf,0,2),xl=/\.xlsx$/i.test(f.name)||(b[0]===0x50&&b[1]===0x4b);
+      let rows,aba='';
+      if(xl){const nomes=await nomesAbas(buf);aba=nomes.length===1?nomes[0]:'';
+        rows=await readXlsx(buf,'ENGEN CARDAPIO');
+        if(!parseEngen(rows)&&!acharCab(rows)){for(let n=0;;n++){const o=await readXlsx(buf,null,n);if(o===null)break;if(o.length&&acharCab(o)){rows=o;aba=nomes[n]||aba;break}}}}
+      else{let t=new TextDecoder('utf-8').decode(buf);if(t.includes('�'))t=new TextDecoder('windows-1252').decode(buf);rows=parseCSV(t)}
+      /* online: antes de importar, confirmar de qual cliente são os dados */
+      if(SB&&EMP){
+        if(!podeBase()){toast('Você não tem permissão para importar dados.');return}
+        const alvo=await escolherCliente(f.name,aba);if(!alvo)return;
+        if(alvo.id!==CLI_ID){usarCliente(alvo.id);C={items:[],name:''};index();await recarregarOnline(false);desenharSeletor(CLI_ID)}}
+      if(xl){let tabs=[];try{tabs=await readAbasItens(buf)}catch(e){}importRows(rows,f.name,false,tabs)}
+      else importRows(rows,f.name)
+    }catch(err){toast('Não foi possível ler o arquivo. Use .xlsx (Excel) ou .csv, com código, descrição, custo, preço e quantidade.')}};
 
   /* ---------- Código → descrição / Descrição → busca ---------- */
   let auto=false;
@@ -633,7 +737,8 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     endEdit();closeSug();auto=false;S.products=[];S.sel=0;save();render();
     toast('Tabela limpa. Inclua novos produtos para começar de novo.')};
   $('addBtn').onclick=()=>{
-    const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=num($('pCost').value),cur=num($('pCur').value),qty=parseInt($('pQty').value,10);
+    const z=(id,v)=>$(id).readOnly&&isNaN(v)?0:v;
+    const code=$('pCode').value.trim(),name=$('pDesc').value.trim(),cost=z('pCost',num($('pCost').value)),cur=z('pCur',num($('pCur').value)),qty=z('pQty',parseInt($('pQty').value,10));
     if(!name||!(cost>=0)||!(cur>=0)||!(qty>=0)){toast('Preencha descrição, custo, preço atual e quantidade.');return}
     const np=Object.assign({code,name,cost,current:cur,qty},curPar?{par:curPar}:{}),dup=idxKey(S.products,pKey(np),editIdx);
     if(editIdx>=0&&S.products[editIdx]){
@@ -838,7 +943,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     if(ed){startEdit(+ed.dataset.edit);return}
     if(d){endEdit();S.products.splice(+d.dataset.del,1);if(S.sel>=S.products.length)S.sel=S.products.length-1;save();render();return}
     const tr=e.target.closest('tr[data-i]');if(tr){S.sel=+tr.dataset.i;save();render()}};
-  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(KEY)}catch(e){}render();toast('Parâmetros restaurados e tabela limpa (o cadastro importado foi mantido)')};
+  $('resetBtn').onclick=()=>{endEdit();S=clone(DEF);try{localStorage.removeItem(SK)}catch(e){}render();toast('Parâmetros restaurados e tabela limpa (o cadastro importado foi mantido)')};
 
   /* Cadastro vindo do GitHub: se existir produtos.csv (ou produtos.xlsx) ao lado do index.html, ele é carregado ao abrir */
   async function loadRemote(){
@@ -894,13 +999,22 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     if(noApps)lerPlanilha().then(ok,ko);
     else google.script.run.withSuccessHandler(ok).withFailureHandler(()=>ko({perm:true})).catalogo()};
   /* ===== LOGIN E BANCO ONLINE (Supabase): quem tem acesso aos dados consulta; editor/admin atualizam ===== */
-  const pode=()=>EMP&&(EMP.papel==='admin'||EMP.papel==='editor');
+  /* Permissões do usuário (o banco confere de novo; aqui só ajusta a tela) */
+  const FL=['ed_custo','ed_preco','ed_qtd','ed_desc','ed_param','gerir_base'];
+  const can=k=>!EMP||EMP.papel==='admin'||(EMP.papel==='editor'&&EMP[k]===true);
+  const podeEditar=()=>!!EMP&&FL.slice(0,5).some(can);
+  const podeBase=()=>!!EMP&&can('gerir_base');
+  const pode=podeEditar;
+  function travas(){
+    [['pCost','ed_custo','custo'],['pCur','ed_preco','preço de venda'],['pQty','ed_qtd','quantidade vendida']].forEach(([id,k,n])=>{
+      const el=$(id),ok=can(k);el.readOnly=!ok;el.title=ok?'':'Sem permissão para alterar o '+n});
+    $('clBtn').hidden=!podeBase()&&!!EMP}
   function authMsg(t,ok){const m=$('authMsg');m.textContent=t||'';m.className=ok?'ok':''}
   function showAuth(f){document.body.classList.remove('ready');$('auth').hidden=false;$('fLogin').hidden=f!=='login';$('fSenha').hidden=f!=='senha';$('fSem').hidden=f!=='sem';if(f!=='login')authMsg('')}
   function liberar(){$('auth').hidden=true;document.body.classList.add('ready');$('outBtn').hidden=false}
   async function lerTudo(tab,cols,ord){
     const out=[];
-    for(let i=0;;i+=1000){const r=await SB.from(tab).select(cols).eq('empresa_id',EMP.id).order(ord).range(i,i+999);
+    for(let i=0;;i+=1000){let q=SB.from(tab).select(cols).eq('empresa_id',EMP.id);if(tab==='produtos'&&CLI_ID)q=q.eq('cliente_id',CLI_ID);const r=await q.order(ord).range(i,i+999);
       if(r.error)throw r.error;out.push(...r.data);if(r.data.length<1000)break}
     return out}
   async function recarregarOnline(avisar){
@@ -910,42 +1024,71 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       const nn=v=>v==null?null:Number(v);
       C={items:prods.map(p=>{const c=custo.get(p.id)||{};
         return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
-        name:'banco online · '+EMP.nome};
+        name:'banco online · '+nomeCli()};
       index();REMOTE=true;render();
       if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
-    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.')}}
+      return true
+    }catch(e){toast('Não foi possível carregar os dados online. Tente de novo.');return false}}
   /* Envia a base para o banco: SUBSTITUI a base da empresa (como a planilha ENGEN CARDAPIO, que é a base completa) */
   async function enviarParaBanco(items){
-    if(!pode())return;
-    if(!confirm('Substituir a base online ('+C.items.length+' itens atuais) por '+items.length+' itens deste arquivo? Isso vale para todos os usuários da empresa.'))return;
+    if(!podeBase()){toast('Você não tem permissão para importar dados.');return}
+    if(!CLI_ID){toast('Escolha o cliente antes de importar.');return}
+    if(!confirm('Substituir a base online do cliente '+nomeCli()+' ('+C.items.length+' itens atuais) por '+items.length+' itens deste arquivo? Vale para todos os usuários com acesso a este cliente. Os outros clientes não são alterados.'))return;
     try{
       const itens=items.filter(i=>String(i.c).trim()).map((i,n)=>({codigo:String(i.c).trim(),descricao:i.d||String(i.c),preco:i.p||0,preco_sugerido:i.ps==null?null:i.ps,preco_marketplace:i.pm==null?null:i.pm,
         categoria:i.cat||null,quadrante:i.q||null,ordem:n+1,custo:i.k>0?i.k:null,custo_total:i.ct==null?null:i.ct,mc_atual:i.mcp==null?null:i.mcp,markup_atual:i.mka==null?null:i.mka,markup_sugerido:i.mks==null?null:i.mks,parametros:i.par?Object.assign({pb:i.pb||'A'},i.par):null,qtd_vendida:i.qt>0?i.qt:null}));
-      const r=await SB.rpc('substituir_base',{p_empresa:EMP.id,p_itens:itens});
+      const r=await SB.rpc('substituir_base',{p_empresa:EMP.id,p_cliente:CLI_ID,p_itens:itens});
       if(r.error)throw r.error;
-      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'substituiu_base',detalhe:{qtd:itens.length}});
+      await SB.from('auditoria').insert({empresa_id:EMP.id,cliente_id:CLI_ID,acao:'substituiu_base',detalhe:{qtd:itens.length}});
       await recarregarOnline(false);
-      toast(itens.length+' itens enviados: a base foi atualizada para todos.');
-    }catch(e){toast('Não foi possível enviar os dados. Confira se você tem permissão de edição.')}}
+      toast(itens.length+' itens enviados para '+nomeCli()+': a base foi atualizada para todos.');
+    }catch(e){toast(msgErro(e,'Não foi possível enviar os dados. Confira se você tem permissão de importação.'))}}
+  const msgErro=(e,pad)=>{const t=String(e&&e.message||'');return /Sem permiss/i.test(t)?t.replace(/^.*?(Sem permiss[^\n]*)$/i,'$1'):pad};
   async function salvarItensNoBanco(its){
     try{
       for(const it of its){
-        const a=await SB.from('produtos').update({descricao:it.d,preco:it.p,preco_sugerido:it.ps,preco_marketplace:it.pm}).eq('id',it.id);if(a.error)throw a.error;
-        const b=await SB.from('custos').upsert({produto_id:it.id,empresa_id:EMP.id,custo:it.k,custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks,parametros:it.par?Object.assign({pb:it.pb||'A'},it.par):null,qtd_vendida:it.qt>0?it.qt:null},{onConflict:'produto_id'});if(b.error)throw b.error}
-      await SB.from('auditoria').insert({empresa_id:EMP.id,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
-    }catch(e){toast('A base online não foi atualizada. Confira a sua permissão de edição.')}}
+        const pr={preco_sugerido:it.ps,preco_marketplace:it.pm};if(can('ed_preco'))pr.preco=it.p;if(can('ed_desc'))pr.descricao=it.d;
+        const a=await SB.from('produtos').update(pr).eq('id',it.id);if(a.error)throw a.error;
+        const cu={custo_total:it.ct,mc_atual:it.mcp,markup_atual:it.mka,markup_sugerido:it.mks};
+        if(can('ed_custo'))cu.custo=it.k;if(can('ed_qtd'))cu.qtd_vendida=it.qt>0?it.qt:null;if(can('ed_param'))cu.parametros=it.par?Object.assign({pb:it.pb||'A'},it.par):null;
+        const b=await SB.from('custos').update(cu).eq('produto_id',it.id);if(b.error)throw b.error}
+      await SB.from('auditoria').insert({empresa_id:EMP.id,cliente_id:CLI_ID,acao:'atualizou_item',detalhe:{codigos:its.map(i=>i.c)}});
+    }catch(e){toast(msgErro(e,'A base online não foi atualizada. Confira a sua permissão de edição.'));recarregarOnline(false)}}
+  /* ---------- Clientes ---------- */
+  let CLI=[],CLI_ID=null;
+  const nomeCli=()=>((CLI.find(c=>c.id===CLI_ID)||{}).nome)||(EMP&&EMP.nome)||'';
+  function desenharSeletor(sel){
+    const s=$('cliSel');s.innerHTML=CLI.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join('')||'<option value="">Nenhum cliente</option>';
+    if(sel)s.value=sel;s.disabled=CLI.length<=1;$('cliBox').hidden=false}
+  function usarCliente(id){
+    save();CLI_ID=id||null;try{localStorage.setItem(CLIKEY,id||'')}catch(e){}
+    const k=KEY+'_c_'+(id||'x');
+    try{if(id&&localStorage.getItem(k)==null&&localStorage.getItem(KEY)!=null&&localStorage.getItem('blueprintMigrado_v1')==null){localStorage.setItem(k,localStorage.getItem(KEY));localStorage.setItem('blueprintMigrado_v1','1')}}catch(e){}
+    SK=k;S=load();endEdit()}
+  async function carregarClientes(manter){
+    const r=await SB.from('clientes').select('id,nome').eq('empresa_id',EMP.id).order('nome');
+    CLI=r.error?[]:(r.data||[]);
+    let pref=null;try{pref=localStorage.getItem(CLIKEY)}catch(e){}
+    const alvo=manter&&CLI.some(c=>c.id===manter)?manter:(CLI.some(c=>c.id===pref)?pref:(CLI[0]&&CLI[0].id)||null);
+    desenharSeletor(alvo);return alvo}
+  async function trocarCliente(id){
+    if(id===CLI_ID)return;usarCliente(id);C={items:[],name:''};index();render();await recarregarOnline(false);render()}
+  $('cliSel').onchange=e=>{trocarCliente(e.target.value)};
   async function entrou(ses){
-    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,empresas(nome)').eq('user_id',ses.user.id);
+    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,acesso_todos,ed_custo,ed_preco,ed_qtd,ed_desc,ed_param,gerir_base,empresas(nome)').eq('user_id',ses.user.id);
     if(r.error){showAuth('login');authMsg('Não foi possível verificar o seu acesso. Tente de novo.');return}
     if(!r.data||!r.data.length){showAuth('sem');return}
-    usrMeuId=ses.user.id;const m=r.data[0];EMP={id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||''};
-    liberar();$('tabUsr').hidden=m.papel!=='admin';recarregarOnline(false)}
+    usrMeuId=ses.user.id;const m=r.data[0];EMP=Object.assign({id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||'',todos:m.acesso_todos},Object.fromEntries(FL.map(k=>[k,m[k]===true])));
+    liberar();$('tabUsr').hidden=m.papel!=='admin';
+    const alvo=await carregarClientes();usarCliente(alvo);travas();
+    if(!CLI.length){C={items:[],name:''};index();render();toast(m.papel==='admin'?'Nenhum cliente cadastrado. Cadastre na aba Usuários ou importe uma planilha.':'Nenhum cliente liberado para o seu usuário. Peça ao administrador.');return}
+    await recarregarOnline(false);render()}
   async function iniciarLogin(){
     await new Promise((ok,ko)=>{const s=document.createElement('script');
       s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
       s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
     SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;$('tabUsr').hidden=true;showAuth('login')}});
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;CLI=[];CLI_ID=null;$('cliBox').hidden=true;$('tabUsr').hidden=true;showAuth('login')}});
     const g=await SB.auth.getSession();
     if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
     if(g.data.session)entrou(g.data.session);else showAuth('login')}
@@ -966,9 +1109,11 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('outBtn').onclick=async()=>{S.products=[];save();try{localStorage.removeItem(CK)}catch(e){}
     try{await SB.auth.signOut()}catch(e){}location.reload()};
   $('semSair').onclick=()=>$('outBtn').onclick();
-  /* ---------- Página Usuários (somente administrador) ---------- */
+  /* ---------- Página Usuários e Clientes (somente administrador) ---------- */
   const PAPEL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
+  const FLN={ed_custo:'Custo',ed_preco:'Preço de venda',ed_qtd:'Quantidade vendida',ed_desc:'Descrição',ed_param:'Impostos e margem do item',gerir_base:'Importar planilhas e reclassificar'};
   const usrMsg=(t,ok)=>{const m=$('usrMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
+  const cliMsg=(t,ok)=>{const m=$('cliMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
   async function usrChamar(body){
     const r=await SB.functions.invoke('gerenciar-usuarios',{body});
     if(r.error){let t='Não foi possível concluir. Tente de novo.';
@@ -976,47 +1121,116 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       throw new Error(t)}
     if(r.data&&r.data.erro)throw new Error(r.data.erro);
     return r.data||{}}
-  let usrLista=[];
+  /* Bloco de acesso (clientes liberados + o que pode editar), usado no cadastro e na janela de edição */
+  function accHTML(p){
+    return '<fieldset class="acc"><legend>Clientes liberados</legend>'+
+      '<label class="opt"><input type="radio" name="'+p+'Esc" value="todos"> Todos os clientes (acesso geral)</label>'+
+      '<label class="opt"><input type="radio" name="'+p+'Esc" value="sel"> Somente os clientes selecionados</label>'+
+      '<div class="lst" id="'+p+'Lst">'+(CLI.length?CLI.map(c=>'<label><input type="checkbox" value="'+esc(c.id)+'"> '+esc(c.nome)+'</label>').join(''):'')+'</div>'+
+      (CLI.length?'':'<div class="vazio">Nenhum cliente cadastrado ainda. Cadastre o cliente acima.</div>')+'</fieldset>'+
+      '<fieldset class="acc"><legend>Pode editar (o banco bloqueia o que não estiver marcado)</legend><div class="flg">'+
+      FL.map(k=>'<label><input type="checkbox" id="'+p+k+'"> '+FLN[k]+'</label>').join('')+'</div></fieldset>'}
+  function accSync(p,papel){
+    const adm=papel==='admin',lei=papel==='leitor',rs=document.querySelectorAll('input[name='+p+'Esc]');
+    if(adm)rs.forEach(r=>r.checked=r.value==='todos');
+    rs.forEach(r=>r.disabled=adm);
+    const todos=document.querySelector('input[name='+p+'Esc]:checked'),sel=!todos||todos.value==='sel';
+    document.querySelectorAll('#'+p+'Lst input').forEach(i=>{i.disabled=adm||!sel;if(!sel)i.checked=false});
+    FL.forEach(k=>{const c=$(p+k);if(adm)c.checked=true;if(lei)c.checked=false;c.disabled=adm||lei})}
+  function accPreencher(p,v){
+    document.querySelectorAll('input[name='+p+'Esc]').forEach(r=>r.checked=r.value===(v.todos?'todos':'sel'));
+    document.querySelectorAll('#'+p+'Lst input').forEach(i=>i.checked=!v.todos&&(v.clientes||[]).includes(i.value));
+    FL.forEach(k=>$(p+k).checked=!!(v.flags&&v.flags[k]))}
+  function accLer(p){
+    const r=document.querySelector('input[name='+p+'Esc]:checked'),flags={};FL.forEach(k=>flags[k]=$(p+k).checked);
+    return {todos:!!r&&r.value==='todos',clientes:[...document.querySelectorAll('#'+p+'Lst input:checked')].map(i=>i.value),flags}}
+  function accMontar(p,alvo,v,papel){
+    $(alvo).innerHTML=accHTML(p);accPreencher(p,v);accSync(p,papel);
+    $(alvo).onchange=()=>accSync(p,p==='n'?$('uPapel').value:$('ePapel').value)}
+  /* clientes */
+  async function cliCarregar(){
+    if(!SB||!EMP||EMP.papel!=='admin')return;
+    const r=await SB.from('clientes').select('id,nome').eq('empresa_id',EMP.id).order('nome');
+    if(r.error){$('cliBody').innerHTML='<tr><td colspan="3" class="empty" style="text-align:center">Não foi possível carregar os clientes.</td></tr>';return}
+    CLI=r.data||[];desenharSeletor(CLI_ID);
+    $('cliCount').textContent=CLI.length+(CLI.length===1?' cliente':' clientes');
+    const cont={};await Promise.all(CLI.map(async c=>{const q=await SB.from('produtos').select('id',{count:'exact',head:true}).eq('empresa_id',EMP.id).eq('cliente_id',c.id);cont[c.id]=q.count}));
+    $('cliBody').innerHTML=CLI.map(c=>'<tr data-c="'+esc(c.id)+'" data-n="'+esc(c.nome)+'"><td>'+esc(c.nome)+'</td><td>'+(cont[c.id]==null?'—':cont[c.id])+'</td><td><div class="ac"><button type="button" data-a="renomear">Renomear</button></div></td></tr>').join('')||'<tr><td colspan="3" class="empty" style="text-align:center">Nenhum cliente cadastrado.</td></tr>';
+    if(!$('usrMdl').hidden)return;accMontar('n','nAcc',accLer('n'),$('uPapel').value)}
+  $('cliForm').onsubmit=async e=>{e.preventDefault();
+    const nome=$('cNome').value.trim().replace(/\s+/g,' '),b=$('cAdd');if(!nome)return;b.disabled=true;cliMsg('Cadastrando…',true);
+    const r=await SB.from('clientes').insert({empresa_id:EMP.id,nome}).select('id,nome').single();
+    b.disabled=false;
+    if(r.error){cliMsg(r.error.code==='23505'||/duplicate|unique/i.test(r.error.message||'')?'Já existe um cliente com esse nome.':'Não foi possível cadastrar o cliente.',false);return}
+    $('cNome').value='';cliMsg('Cliente '+nome+' cadastrado. Agora importe a planilha dele ou libere usuários.',true);await cliCarregar()};
+  $('cliBody').onclick=async e=>{
+    const bt=e.target.closest('button[data-a]');if(!bt)return;const tr=bt.closest('tr'),id=tr.dataset.c;
+    if(bt.dataset.a==='renomear'){
+      const td=tr.children[0];td.innerHTML='<input class="inp" type="text" maxlength="80" value="'+esc(tr.dataset.n)+'" style="max-width:320px"> <button type="button" data-a="renomear-ok" class="pri" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer">OK</button>';td.querySelector('input').focus();return}
+    if(bt.dataset.a==='renomear-ok'){
+      const nome=tr.querySelector('input').value.trim().replace(/\s+/g,' ');if(!nome)return;
+      const r=await SB.from('clientes').update({nome}).eq('id',id);
+      if(r.error){cliMsg(r.error.code==='23505'||/duplicate|unique/i.test(r.error.message||'')?'Já existe um cliente com esse nome.':'Não foi possível renomear.',false);return}
+      cliMsg('Cliente renomeado.',true);await cliCarregar()}};
+  /* usuários */
+  let usrLista=[],usrMc={};
   async function usrCarregar(){
     if(!SB||!EMP||EMP.papel!=='admin')return;
-    const r=await SB.from('membros').select('user_id,email,papel,ver_custo').eq('empresa_id',EMP.id).order('email');
-    if(r.error){$('usrBody').innerHTML='<tr><td colspan="4" class="empty" style="text-align:center">Não foi possível carregar os usuários.</td></tr>';return}
+    const r=await SB.from('membros').select('user_id,email,papel,ver_custo,acesso_todos,'+FL.join(',')).eq('empresa_id',EMP.id).order('email');
+    if(r.error){$('usrBody').innerHTML='<tr><td colspan="6" class="empty" style="text-align:center">Não foi possível carregar os usuários.</td></tr>';return}
+    const mc=await SB.from('membros_clientes').select('user_id,cliente_id').eq('empresa_id',EMP.id);
+    usrMc={};(mc.data||[]).forEach(x=>{(usrMc[x.user_id]=usrMc[x.user_id]||[]).push(x.cliente_id)});
     usrLista=r.data||[];usrDesenhar()}
   function usrDesenhar(){
     $('usrCount').textContent=usrLista.length+(usrLista.length===1?' pessoa':' pessoas');
-    const eu=usrMeuId;
-    $('usrBody').innerHTML=usrLista.map(u=>{const s=u.user_id===eu,cu=u.papel!=='leitor';
+    const eu=usrMeuId,nm=id=>((CLI.find(c=>c.id===id)||{}).nome)||'—';
+    const tags=a=>'<div class="usr-tags">'+a+'</div>';
+    $('usrBody').innerHTML=usrLista.map(u=>{const s=u.user_id===eu,adm=u.papel==='admin',lei=u.papel==='leitor';
+      const cli=adm||u.acesso_todos?tags('<span class="todos">Todos os clientes</span>'):tags((usrMc[u.user_id]||[]).map(nm).sort().map(n=>'<span>'+esc(n)+'</span>').join('')||'<span>Nenhum</span>');
+      const ed=adm?tags('<span class="todos">Tudo</span>'):lei?tags('<span>Só consulta</span>'):tags(FL.filter(k=>u[k]).map(k=>'<span>'+esc(FLN[k])+'</span>').join('')||'<span>Só consulta</span>');
       return '<tr data-u="'+esc(u.user_id)+'" data-e="'+esc(u.email||'')+'"><td>'+esc(u.email||'—')+(s?' <small style="color:var(--muted)">(você)</small>':'')+'</td>'+
-        '<td><select class="inp u-pp" '+(s?'disabled':'')+'>'+Object.keys(PAPEL).map(k=>'<option value="'+k+'"'+(k===u.papel?' selected':'')+'>'+PAPEL[k]+'</option>').join('')+'</select></td>'+
-        '<td><input type="checkbox" class="u-cc" aria-label="Pode ver o custo" '+(u.ver_custo||cu?'checked':'')+(cu||s?' disabled':'')+'></td>'+
-        '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="senha">Trocar senha</button>'+(s?'<span></span>':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="4" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
+        '<td>'+PAPEL[u.papel]+'</td><td>'+cli+'</td><td>'+ed+'</td><td>'+(u.ver_custo||u.papel!=='leitor'?'Sim':'Não')+'</td>'+
+        '<td><div class="ac tres">'+(s?'<span></span>':'<button type="button" class="pri" data-a="editar">Editar acesso</button>')+'<button type="button" data-a="senha">Trocar senha</button>'+(s?'<span></span>':'<button type="button" class="del" data-a="remover">Remover</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="6" class="empty" style="text-align:center">Nenhum usuário liberado.</td></tr>'}
   let usrMeuId=null;
-  $('uPapel').onchange=()=>{const c=$('uCusto'),l=$('uPapel').value==='leitor';c.checked=!l;c.disabled=!l};
-  $('uPapel').onchange();
+  $('uPapel').onchange=()=>{const c=$('uCusto'),l=$('uPapel').value==='leitor';c.checked=!l;c.disabled=!l;accSync('n',$('uPapel').value)};
+  accMontar('n','nAcc',{todos:false,clientes:[],flags:{}},'leitor');$('uPapel').onchange();
   $('uVer').onclick=()=>{const i=$('uSenha'),v=i.type==='password';i.type=v?'text':'password';$('uVer').textContent=v?'Ocultar':'Mostrar';$('uVer').setAttribute('aria-pressed',v)};
   $('usrForm').onsubmit=async e=>{e.preventDefault();
+    const ac=accLer('n'),papel=$('uPapel').value,todos=papel==='admin'||ac.todos;
+    if(!todos&&!ac.clientes.length){usrMsg('Escolha ao menos um cliente ou marque acesso a todos os clientes.',false);return}
     const b=$('uAdd');b.disabled=true;usrMsg('Cadastrando…',true);
-    try{const d=await usrChamar({acao:'criar',email:$('uEmail').value.trim(),senha:$('uSenha').value,papel:$('uPapel').value,ver_custo:$('uCusto').checked});
+    try{const d=await usrChamar({acao:'criar',email:$('uEmail').value.trim(),senha:$('uSenha').value,papel,ver_custo:$('uCusto').checked,todos,clientes:todos?[]:ac.clientes,flags:papel==='editor'?ac.flags:{}});
       usrMsg(d.msg||'Usuário liberado.',true);$('uEmail').value='';$('uSenha').value='';$('uSenha').type='password';$('uVer').textContent='Mostrar';
+      accMontar('n','nAcc',{todos:false,clientes:[],flags:{}},papel);
       await usrCarregar()}
     catch(x){usrMsg(x.message,false)}
     b.disabled=false};
-  let usrConf=null;
-  $('usrBody').onchange=e=>{const tr=e.target.closest('tr');if(!tr||!e.target.classList.contains('u-pp'))return;
-    const c=tr.querySelector('.u-cc'),l=e.target.value==='leitor';if(!l){c.checked=true}c.disabled=!l};
+  let usrConf=null,usrEd=null;
+  const eMsg=(t,ok)=>{const m=$('eMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
+  function abrirEdicao(u){
+    usrEd=u;$('eTit').textContent='Acesso de '+(u.email||'');$('ePapel').value=u.papel;
+    const l=u.papel==='leitor';$('eCusto').checked=u.ver_custo||!l;$('eCusto').disabled=!l;
+    accMontar('e','eAcc',{todos:u.papel==='admin'||u.acesso_todos,clientes:usrMc[u.user_id]||[],flags:u},u.papel);
+    eMsg('');$('usrMdl').hidden=false;$('ePapel').focus()}
+  $('ePapel').onchange=()=>{const l=$('ePapel').value==='leitor';$('eCusto').checked=!l?true:$('eCusto').checked;$('eCusto').disabled=!l;accSync('e',$('ePapel').value)};
+  $('eCancel').onclick=()=>{$('usrMdl').hidden=true;usrEd=null};
+  $('eOk').onclick=async()=>{
+    if(!usrEd)return;const papel=$('ePapel').value,ac=accLer('e'),todos=papel==='admin'||ac.todos;
+    if(!todos&&!ac.clientes.length){eMsg('Escolha ao menos um cliente ou marque acesso a todos os clientes.',false);return}
+    $('eOk').disabled=true;
+    const r=await SB.rpc('definir_acesso',{p_empresa:EMP.id,p_user:usrEd.user_id,p_papel:papel,p_ver_custo:papel!=='leitor'||$('eCusto').checked,p_todos:todos,p_clientes:todos?[]:ac.clientes,p_flags:papel==='editor'?ac.flags:{}});
+    $('eOk').disabled=false;
+    if(r.error){eMsg(/pelo menos um administrador/i.test(r.error.message||'')?'A empresa precisa ter pelo menos um administrador.':/ao menos um cliente/i.test(r.error.message||'')?'Escolha ao menos um cliente ou marque acesso a todos os clientes.':'Não foi possível salvar o acesso. Tente de novo.',false);return}
+    const em=usrEd.email;$('usrMdl').hidden=true;usrEd=null;usrMsg('Acesso de '+em+' atualizado.',true);await usrCarregar()};
   $('usrBody').onclick=async e=>{
     const bt=e.target.closest('button[data-a]');if(!bt)return;
     const tr=bt.closest('tr'),uid=tr.dataset.u,em=tr.dataset.e,a=bt.dataset.a;
     if(a!=='remover'&&usrConf){usrConf.textContent='Remover';usrConf.classList.remove('conf');usrConf=null}
     try{
-      if(a==='salvar'){
-        const pp=tr.querySelector('.u-pp').value,cc=pp!=='leitor'?true:tr.querySelector('.u-cc').checked;
-        const r=await SB.from('membros').update({papel:pp,ver_custo:cc}).eq('empresa_id',EMP.id).eq('user_id',uid);
-        if(r.error)throw new Error('Não foi possível salvar. A empresa precisa ter pelo menos um administrador.');
-        usrMsg('Acesso de '+em+' atualizado.',true);await usrCarregar()}
+      if(a==='editar'){abrirEdicao(usrLista.find(u=>u.user_id===uid))}
       else if(a==='senha'){
         let w=tr.querySelector('.pwr');
-        if(!w){w=document.createElement('div');w.className='pwr';w.innerHTML='<input class="inp" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 8)" minlength="8" maxlength="72"><button type="button" class="pri" data-a="senha-ok" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer">Confirmar</button>';
+        if(!w){w=document.createElement('div');w.className='pwr';w.innerHTML='<input class="inp" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 8)" minlength="8" maxlength="72"><button type="button" class="pri" data-a="senha-ok" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer">OK</button>';
           tr.querySelector('.ac').after(w);w.querySelector('input').focus()}
         else w.remove()}
       else if(a==='senha-ok'){
@@ -1031,7 +1245,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     }catch(x){usrMsg(x.message,false)}};
   $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
-    ['vSim','vMat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr')usrCarregar()};
+    ['vSim','vMat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr'){cliCarregar().then(usrCarregar)}};
   if(SUPABASE_URL&&SUPABASE_ANON_KEY)iniciarLogin().catch(()=>{showAuth('login');authMsg('Não foi possível carregar o login. Verifique a conexão.')});
   else document.body.classList.add('ready');
   render();
