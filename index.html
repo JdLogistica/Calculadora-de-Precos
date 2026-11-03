@@ -831,7 +831,7 @@ function toggle(tab,k,v){const s=S[tab];s.sel[k]=s.sel[k]===v?'':v;s.pg=0;cur!==
 
 document.addEventListener('click',e=>{
  const t=e.target;let b;
- if(b=t.closest('#tabs [data-tab]'))return go(b.dataset.tab);
+ if(b=t.closest('#e-tabs [data-tab]'))return go(b.dataset.tab);
  if(b=t.closest('[data-go]'))return go(b.dataset.go);
  if(b=t.closest('[data-v]'))return toggle(b.closest('.pn').dataset.tab,b.dataset.k,b.dataset.v);
  if(b=t.closest('.hc')){const s=S.inv,on=s.sel.ru==b.dataset.r&&s.sel.pr==b.dataset.c;s.sel.ru=on?'':b.dataset.r;s.sel.pr=on?'':b.dataset.c;s.pg=0;syncFilters();return render()}
@@ -1120,7 +1120,7 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#sb-cl')||e.target.closest('#ov2'))return closeSB();
   if(b2=e.target.closest('#sb-nav [data-tab]')){closeSB();return go(b2.dataset.tab)}
   let b;
-  if(b=e.target.closest('#tabs [data-tab]'))return go(b.dataset.tab);
+  if(b=e.target.closest('#p-tabs [data-tab]'))return go(b.dataset.tab);
   if(b=e.target.closest('[data-fk]')){const k=b.dataset.fk,v=b.dataset.fv;if(F[k]===v)F[k]='';else F[k]=v;tPage=0;buildSidebarFilters();return render()}
   if(b=e.target.closest('.hg .col')){const m=b.dataset.m;if(F.mes1===m&&F.mes2===m){F.mes1='';F.mes2=''}else{F.mes1=m;F.mes2=m};tPage=0;buildSidebarFilters();return render()}
   if(b=e.target.closest('th[data-sk]')){const k=b.dataset.sk;tSort=tSort&&tSort[0]===k?[k,-tSort[1]]:[k,1];tPage=0;return render()}
