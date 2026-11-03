@@ -203,13 +203,15 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 .mt.usr-t td{text-align:center;white-space:normal;min-width:0;vertical-align:middle}.mt.usr-t td:first-child{text-align:left;overflow-wrap:anywhere}
 .mt.usr-u{min-width:1100px}.mt.usr-u th:nth-child(1){width:20%}.mt.usr-u th:nth-child(2){width:9%}.mt.usr-u th:nth-child(3){width:15%}.mt.usr-u th:nth-child(4){width:17%}.mt.usr-u th:nth-child(5){width:7%}.mt.usr-u th:nth-child(6){width:32%}
 .cat-sub{padding:10px 14px 4px;font-weight:700;font-size:13px;color:var(--t6)}.cat-sub .leg{font-weight:400;margin-left:8px}
-.cat-pad{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;padding:6px 14px 4px}.cat-pad .field{margin:0}
-.cat-act{display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px 12px}
 .cat-i .ac button,#vCat .fbtn{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .cat-i .ac button{padding:5px 10px;font-size:12px}.cat-i .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}#vCat .fbtn:hover,.cat-i .ac button:hover{border-color:var(--t6)}
-.cat-t .ac button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer}.cat-t .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}.cat-t .ac button.del{color:var(--red)}
-#catForm{align-items:flex-end}
-.mt.cat-t{min-width:560px}.mt.cat-t th:nth-child(1){width:44%}.mt.cat-t th:nth-child(2){width:12%}.mt.cat-t th:nth-child(3){width:44%}.cat-t .ac{grid-template-columns:repeat(3,auto);justify-content:center}
+.cat-top{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;justify-content:space-between;padding:14px}.cat-top form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;flex:1 1 420px;padding:0}.cat-top .field{margin:0;flex:1 1 260px}.cat-top-b{display:flex;gap:10px;flex-wrap:wrap}
+.mt.cat-g{min-width:1340px;table-layout:fixed;width:100%}.mt.cat-g th,.mt.cat-g td{padding:6px 5px;white-space:normal}.mt.cat-g th:nth-child(1){width:16%}.mt.cat-g th:nth-child(2){width:4.5%}.mt.cat-g th:nth-child(n+3):nth-child(-n+11){width:6.2%}.mt.cat-g th:nth-child(12){width:23.7%}
+.mt.cat-g td:nth-child(2){min-width:0;text-align:center}.mt.cat-g .inp{width:100%;min-width:0;padding:6px 6px;font-size:13px}.mt.cat-g td:nth-child(n+3):nth-child(-n+11) .inp{text-align:right}
+.mt.cat-g tr.sujo td{background:#fff8dc}.mt.cat-g tr.sel td{box-shadow:inset 0 -2px 0 var(--t6)}
+.mt.cat-g .ac{display:grid;grid-template-columns:1fr 1fr;gap:5px}.mt.cat-g .ac button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 6px;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap}.mt.cat-g .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}.mt.cat-g .ac button.pri:disabled{background:#fff;color:#9aa8ad;border-color:var(--line);cursor:default}.mt.cat-g .ac button.del{color:var(--red)}
+.cat-nota{padding:8px 14px 12px;font-size:12px;color:var(--muted)}
+#catSalvarTudo:disabled{opacity:.45;cursor:default}
 .mt.cat-i{min-width:900px;table-layout:fixed}.mt.cat-i th:nth-child(1){width:9%}.mt.cat-i th:nth-child(2){width:33%}.mt.cat-i th:nth-child(3),.mt.cat-i th:nth-child(4){width:12%}.mt.cat-i th:nth-child(5){width:12%}.mt.cat-i th:nth-child(6){width:22%}
 .mt.cat-i td{white-space:normal;vertical-align:middle}.mt.cat-i td:nth-child(2){text-align:left;min-width:0}.mt.cat-i .inp{width:100%;min-width:0;padding:6px 8px}.mt.cat-i .ac{display:flex;gap:6px;justify-content:center}
 .cat-add{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 14px 14px}.cat-add .field{margin:0;flex:1 1 320px}
@@ -336,20 +338,20 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   <div class="strip" id="catStrip">Categorias · somente e-mails autorizados veem esta aba</div>
   <section class="card cli-new">
     <h3>Categorias <span class="leg" id="catCount"></span></h3>
-    <form id="catForm" autocomplete="off">
-      <div class="field"><label for="catNome">Nova categoria</label><input class="inp" id="catNome" type="text" maxlength="80" required placeholder="Nome da categoria (ex.: Bebidas quentes)"></div>
-      <button class="add usr-add" type="submit" id="catAdd" style="width:auto;padding:11px 22px">Cadastrar categoria</button>
-      <button class="fbtn" type="button" id="catBase" title="Cria as categorias que já vêm escritas na planilha importada">Trazer categorias da base</button>
-    </form>
+    <div class="cat-top">
+      <form id="catForm" autocomplete="off">
+        <div class="field"><label for="catNome">Nova categoria</label><input class="inp" id="catNome" type="text" maxlength="80" placeholder="Nome da categoria (ex.: Bebidas quentes)"></div>
+        <button class="add usr-add" type="submit" id="catAdd" style="width:auto;padding:11px 22px">Cadastrar categoria</button>
+      </form>
+      <div class="cat-top-b"><button class="fbtn" type="button" id="catBase" title="Cria as categorias que estão escritas nos itens do cliente">Atualizar lista pela base</button><button class="add" type="button" id="catSalvarTudo" style="width:auto;padding:9px 18px" disabled>Salvar alterações</button></div>
+    </div>
     <div class="usr-msg" id="catMsg" role="status" aria-live="polite" style="padding:0 14px 10px;margin-top:0"></div>
-    <div class="tw"><table class="mt usr-t cat-t"><thead><tr><th>Categoria</th><th>Itens</th><th>Ações</th></tr></thead><tbody id="catBody"></tbody></table></div>
+    <div class="tw"><table class="mt cat-g"><thead><tr><th>Categoria</th><th>Itens</th><th>Margem (%)</th><th>Marketplace (%)</th><th>Desconto (%)</th><th>CSLL + IR (%)</th><th>PIS (%)</th><th>COFINS (%)</th><th>ICMS (%)</th><th>Cartão (%)</th><th>Comissão (%)</th><th>Ações</th></tr></thead><tbody id="catBody"></tbody></table></div>
+    <div class="cat-nota">Percentuais em branco usam o padrão geral do simulador. Os percentuais só passam a valer nos itens quando você clica em <b>Aplicar</b>.</div>
   </section>
   <section class="card" id="catDet" hidden>
     <h3 id="catDetT">Categoria</h3>
-    <div class="cat-sub">Percentuais da categoria <span class="leg">vazio = usa o padrão geral do simulador</span></div>
-    <div class="cat-pad" id="catPad"></div>
-    <div class="cat-act"><button class="add" type="button" id="catPadSalvar" style="width:auto;padding:9px 18px">Salvar percentuais</button><button class="fbtn" type="button" id="catPadAplicar">Aplicar aos itens da categoria</button></div>
-    <div class="cat-sub">Itens da categoria <span class="leg" id="catItCount"></span></div>
+    <div class="cat-sub"><span id="catItCount"></span> <span class="leg">edite descrição, custo, preço e quantidade e clique em Salvar na linha</span></div>
     <div class="tw"><table class="mt cat-i"><thead><tr><th>Código</th><th>Descrição</th><th>Custo (R$)</th><th>Preço atual (R$)</th><th>Qtd. vendida</th><th>Ações</th></tr></thead><tbody id="catIt"></tbody></table></div>
     <div class="cat-add"><div class="field"><label for="catIncl">Incluir item na categoria</label><input class="inp" id="catIncl" list="catLista" placeholder="Digite o código ou a descrição" autocomplete="off"><datalist id="catLista"></datalist></div><button class="fbtn" type="button" id="catInclOk">Incluir</button></div>
   </section>
@@ -1085,7 +1087,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       C={items:prods.map(p=>{const c=custo.get(p.id)||{};
         return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
         name:'banco online · '+nomeCli()};
-      index();REMOTE=true;PREV_CLI=CLI_ID;SIG=sig0;const ns=sincTabela(prev);render();if(!$('vCat').hidden)catDesenhar();
+      index();REMOTE=true;PREV_CLI=CLI_ID;SIG=sig0;const ns=sincTabela(prev);render();if(!$('vCat').hidden&&!catSujo.size)catDesenhar();
       if(porOutro)toast('Dados atualizados: outro usuário fez alterações'+(ns?' ('+ns+' item'+(ns>1?'s':'')+' da tabela)':'')+'.');
       else if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
       return true
@@ -1158,7 +1160,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
       s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
     SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;CLI=[];CLI_ID=null;$('cliBox').hidden=true;$('tabUsr').hidden=true;$('tabCat').hidden=true;CAT=[];catSel=null;showAuth('login')}});
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;CLI=[];CLI_ID=null;$('cliBox').hidden=true;$('tabUsr').hidden=true;$('tabCat').hidden=true;CAT=[];catSel=null;catSujo.clear();showAuth('login')}});
     const g=await SB.auth.getSession();
     if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
     if(g.data.session)entrou(g.data.session);else showAuth('login')}
@@ -1315,27 +1317,37 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     }catch(x){usrMsg(x.message,false)}};
 
   /* ---------- Categorias (por cliente; só admin e e-mails autorizados) ---------- */
-  const PADK=[['mc','Margem de contribuição (%)'],['mkt','Marketplace (%)'],['desc','Desconto (%)'],['csll','CSLL + IR (%)'],['pis','PIS (%)'],['cofins','COFINS (%)'],['icms','ICMS (%)'],['cartao','Cartão (%)'],['comissao','Comissão (%)']];
-  let CAT=[],catSel=null;
+  const PADK=[['mc','Margem'],['mkt','Marketplace'],['desc','Desconto'],['csll','CSLL + IR'],['pis','PIS'],['cofins','COFINS'],['icms','ICMS'],['cartao','Cartão'],['comissao','Comissão']];
+  let CAT=[],catSel=null,catSujo=new Set(),catAuto=false;
   const podeCat=()=>!!EMP&&(EMP.papel==='admin'||(EMP.papel==='editor'&&EMP.gerir_categorias===true));
   const catNorm=s=>String(s||'').trim().toLowerCase();
   const itensCat=c=>C.items.filter(i=>catNorm(i.cat)===catNorm(c.nome));
   const catMsg=(t,ok)=>{const m=$('catMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
   const catErro=(e,pad)=>/duplicate|unique|23505/i.test(String(e&&(e.message||e.code)||''))?'Já existe uma categoria com esse nome neste cliente.':msgErro(e,pad);
-  async function catCarregar(){
-    if(!SB||!EMP||!CLI_ID||!podeCat()){CAT=[];catDesenhar();return}
+  const catBtnTudo=()=>{$('catSalvarTudo').disabled=!catSujo.size;$('catSalvarTudo').textContent=catSujo.size?'Salvar alterações ('+catSujo.size+')':'Salvar alterações'};
+  /* categoria nova vinda da base: já entra com os percentuais que os itens dela usam (o valor mais comum de cada campo) */
+  function catModa(c){const out={};['mc','csll','pis','cofins','icms','cartao','comissao'].forEach(k=>{const m=new Map();itensCat(c).forEach(i=>{if(i.par&&i.par[k]!=null)m.set(i.par[k],(m.get(i.par[k])||0)+1)});let best=null,n=0;m.forEach((q,v)=>{if(q>n){n=q;best=v}});if(best!=null)out[k]=best});return out}
+  async function catCarregar(auto,antes){
+    if(!SB||!EMP||!CLI_ID||!podeCat()){CAT=[];catSujo.clear();catDesenhar();return}
     const r=await SB.from('categorias').select('id,nome,padroes').eq('empresa_id',EMP.id).eq('cliente_id',CLI_ID).order('nome');
-    if(r.error){$('catBody').innerHTML='<tr><td colspan="3" class="empty" style="text-align:center">Não foi possível carregar as categorias.</td></tr>';return}
-    CAT=r.data||[];if(catSel&&!CAT.some(c=>c.id===catSel))catSel=null;catDesenhar()}
+    if(r.error){$('catBody').innerHTML='<tr><td colspan="12" class="empty" style="text-align:center">Não foi possível carregar as categorias.</td></tr>';return}
+    CAT=r.data||[];if(catSel&&!CAT.some(c=>c.id===catSel))catSel=null;
+    /* já vem listado: categorias escritas nos itens do cliente e ainda não cadastradas entram sozinhas */
+    const reg=new Set(CAT.map(c=>catNorm(c.nome)));
+    if(!auto&&C.items.some(i=>catNorm(i.cat)&&!reg.has(catNorm(i.cat)))){
+      const antes=new Set(CAT.map(c=>c.id)),g=await SB.rpc('categorias_da_base',{p_empresa:EMP.id,p_cliente:CLI_ID});if(!g.error&&g.data)return catCarregar(true,antes)}
+    if(antes)for(const c of CAT.filter(x=>!antes.has(x.id)&&!Object.keys(x.padroes||{}).length)){const pd=catModa(c);if(Object.keys(pd).length){const u=await SB.from('categorias').update({padroes:pd}).eq('id',c.id);if(!u.error)c.padroes=pd}}
+    catSujo.clear();catDesenhar()}
   function catDesenhar(){
     $('catStrip').textContent='Categorias do cliente '+nomeCli()+' · somente e-mails autorizados veem esta aba';
     $('catCount').textContent=CAT.length+(CAT.length===1?' categoria':' categorias');
-    $('catBody').innerHTML=CAT.map(c=>'<tr data-c="'+esc(c.id)+'" data-n="'+esc(c.nome)+'"'+(c.id===catSel?' class="sel"':'')+'><td style="text-align:left">'+esc(c.nome)+'</td><td>'+itensCat(c).length+'</td><td><div class="ac"><button type="button" class="pri" data-a="abrir">Abrir</button><button type="button" data-a="renomear">Renomear</button><button type="button" class="del" data-a="excluir">Excluir</button></div></td></tr>').join('')||'<tr><td colspan="3" class="empty" style="text-align:center">Nenhuma categoria cadastrada neste cliente.</td></tr>';
-    catDetalhe()}
+    $('catBody').innerHTML=CAT.map(c=>'<tr data-c="'+esc(c.id)+'"'+(c.id===catSel?' class="sel"':'')+'><td><input class="inp" data-f="nome" type="text" maxlength="80" value="'+esc(c.nome)+'"></td><td>'+itensCat(c).length+'</td>'+
+      PADK.map(([k,l])=>'<td><input class="inp" data-k="'+k+'" type="number" min="0" max="100" step="0.01" aria-label="'+l+' (%)" value="'+(c.padroes&&c.padroes[k]!=null?esc(c.padroes[k]):'')+'" placeholder="'+esc(S[k]!=null?S[k]:'')+'"></td>').join('')+
+      '<td><div class="ac"><button type="button" class="pri" data-a="salvar" disabled>Salvar</button><button type="button" data-a="itens">Itens</button><button type="button" data-a="aplicar">Aplicar</button><button type="button" class="del" data-a="excluir">Excluir</button></div></td></tr>').join('')||'<tr><td colspan="12" class="empty" style="text-align:center">Nenhuma categoria neste cliente. Cadastre uma acima ou importe a planilha do cliente.</td></tr>';
+    catBtnTudo();catDetalhe()}
   function catDetalhe(){
     const c=CAT.find(x=>x.id===catSel);$('catDet').hidden=!c;if(!c)return;
-    $('catDetT').textContent='Categoria: '+c.nome;
-    $('catPad').innerHTML=PADK.map(([k,l])=>'<div class="field"><label for="cp_'+k+'">'+l+'</label><input class="inp" id="cp_'+k+'" type="number" min="0" max="100" step="0.01" value="'+(c.padroes&&c.padroes[k]!=null?esc(c.padroes[k]):'')+'" placeholder="'+esc(S[k]!=null?S[k]:'')+'"></div>').join('');
+    $('catDetT').textContent='Itens da categoria: '+c.nome;
     const its=itensCat(c),vc=!EMP||EMP.papel!=='leitor'||EMP.ver_custo===true;
     $('catItCount').textContent=its.length+(its.length===1?' item':' itens');
     $('catIt').innerHTML=its.map(i=>'<tr data-i="'+esc(i.id)+'"><td>'+esc(i.c)+'</td><td><input class="inp" data-f="d" type="text" maxlength="200" value="'+esc(i.d||'')+'"'+(can('ed_desc')?'':' readonly title="Sem permissão para alterar a descrição"')+'></td>'+
@@ -1343,47 +1355,53 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       '<td><input class="inp" data-f="p" type="number" min="0" step="0.01" value="'+(i.p==null?'':+(+i.p).toFixed(4))+'"'+(can('ed_preco')?'':' readonly title="Sem permissão para alterar o preço"')+'></td>'+
       '<td><input class="inp" data-f="qt" type="number" min="0" step="1" value="'+(i.qt||0)+'"'+(can('ed_qtd')?'':' readonly title="Sem permissão para alterar a quantidade"')+'></td>'+
       '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="tirar">Tirar</button></div></td></tr>').join('')||'<tr><td colspan="6" class="empty" style="text-align:center">Nenhum item nesta categoria. Use "Incluir item" abaixo.</td></tr>';
-    const livres=C.items.filter(i=>catNorm(i.cat)!==catNorm(c.nome)).slice(0,2000);
+    const livres=C.items.filter(i=>catNorm(i.cat)!==catNorm(c.nome)&&i.id).slice(0,2000);
     $('catLista').innerHTML=livres.map(i=>'<option value="'+esc(i.c+' — '+(i.d||''))+'"></option>').join('')}
   /* refaz os valores derivados de um item (mesmas fórmulas) e espelha na tabela de simulação deste navegador */
   function catRecalc(it){const r=calc({code:it.c,name:it.d,cost:it.k,current:it.p,qty:0,par:it.par});Object.assign(it,{ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks})}
   function catEspelhar(it){const row=S.products.find(p=>key(p.code)===key(it.c));if(!row)return;
     const vc=!EMP||EMP.papel!=='leitor'||EMP.ver_custo===true;row.name=it.d||row.name;row.current=it.p;if(vc)row.cost=it.k;row.qty=it.qt||0;if(it.par)row.par=Object.assign({},it.par);else delete row.par}
+  const catLer=tr=>{const pad={};tr.querySelectorAll('input[data-k]').forEach(i=>{const v=i.value.trim();if(v!==''){const n=num(v);if(!isNaN(n))pad[i.dataset.k]=Math.min(100,Math.max(0,n))}});return{nome:tr.querySelector('input[data-f=nome]').value.trim().replace(/\s+/g,' '),pad}};
+  /* grava uma linha: renomeia (os itens acompanham) e salva os percentuais */
+  async function catSalvarLinha(tr){
+    const id=tr.dataset.c,c=CAT.find(x=>x.id===id);if(!c)return true;const v=catLer(tr);
+    if(!v.nome){catMsg('A categoria precisa de um nome.',false);return false}
+    let renomeou=false;
+    if(v.nome!==c.nome){const r=await SB.rpc('renomear_categoria',{p_cat:id,p_nome:v.nome});if(r.error){catMsg(catErro(r.error,'Não foi possível renomear.'),false);return false}c.nome=v.nome;renomeou=true}
+    if(JSON.stringify(v.pad)!==JSON.stringify(c.padroes||{})){const r=await SB.from('categorias').update({padroes:v.pad}).eq('id',id);if(r.error){catMsg(msgErro(r.error,'Não foi possível salvar os percentuais.'),false);return false}c.padroes=v.pad}
+    catSujo.delete(id);tr.classList.remove('sujo');tr.querySelector('[data-a=salvar]').disabled=true;
+    if(renomeou)await recarregarOnline(false);return true}
+  $('catBody').addEventListener('input',e=>{const tr=e.target.closest('tr');if(!tr||!tr.dataset.c)return;catSujo.add(tr.dataset.c);tr.classList.add('sujo');tr.querySelector('[data-a=salvar]').disabled=false;catBtnTudo()});
+  $('catSalvarTudo').onclick=async()=>{const b=$('catSalvarTudo');b.disabled=true;let n=0,falhou=false;
+    for(const tr of [...$('catBody').querySelectorAll('tr.sujo')]){if(await catSalvarLinha(tr))n++;else{falhou=true;break}}
+    catBtnTudo();if(!falhou){catMsg(n+(n===1?' categoria salva.':' categorias salvas.'),true);catDesenhar()}};
   $('catForm').onsubmit=async e=>{e.preventDefault();
-    const nome=$('catNome').value.trim().replace(/\s+/g,' '),b=$('catAdd');if(!nome)return;b.disabled=true;catMsg('Cadastrando…',true);
+    const nome=$('catNome').value.trim().replace(/\s+/g,' '),b=$('catAdd');if(!nome){catMsg('Digite o nome da categoria.',false);return}b.disabled=true;catMsg('Cadastrando…',true);
     const r=await SB.from('categorias').insert({empresa_id:EMP.id,cliente_id:CLI_ID,nome}).select('id').single();b.disabled=false;
     if(r.error){catMsg(catErro(r.error,'Não foi possível cadastrar a categoria. Confira a sua permissão.'),false);return}
-    $('catNome').value='';catSel=r.data&&r.data.id||null;catMsg('Categoria '+nome+' cadastrada. Inclua os itens nela abaixo.',true);await catCarregar()};
+    $('catNome').value='';catSel=r.data&&r.data.id||null;catMsg('Categoria '+nome+' cadastrada. Preencha os percentuais na linha dela e inclua os itens.',true);await catCarregar(true)};
   $('catBase').onclick=async()=>{catMsg('Buscando na base…',true);
     const r=await SB.rpc('categorias_da_base',{p_empresa:EMP.id,p_cliente:CLI_ID});
     if(r.error){catMsg(msgErro(r.error,'Não foi possível trazer as categorias da base.'),false);return}
-    catMsg(r.data?r.data+' categoria'+(r.data>1?'s':'')+' trazida'+(r.data>1?'s':'')+' da base.':'A base não tem categorias novas para trazer.',true);await catCarregar()};
+    catMsg(r.data?r.data+' categoria'+(r.data>1?'s':'')+' nova'+(r.data>1?'s':'')+' vinda'+(r.data>1?'s':'')+' da base.':'A lista já está completa: a base não tem categorias novas.',true);await catCarregar(true)};
   $('catBody').onclick=async e=>{
-    const bt=e.target.closest('button[data-a]');if(!bt)return;const tr=bt.closest('tr'),id=tr.dataset.c,a=bt.dataset.a;
-    if(a==='abrir'){catSel=id;catDesenhar();$('catDet').scrollIntoView({behavior:'smooth',block:'start'});return}
-    if(a==='renomear'){const td=tr.children[0];td.innerHTML='<input class="inp" type="text" maxlength="80" value="'+esc(tr.dataset.n)+'" style="max-width:320px"> <button type="button" data-a="renomear-ok" class="pri" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer">OK</button>';td.querySelector('input').focus();return}
-    if(a==='renomear-ok'){const nome=tr.querySelector('input').value.trim().replace(/\s+/g,' ');if(!nome)return;
-      const r=await SB.rpc('renomear_categoria',{p_cat:id,p_nome:nome});
-      if(r.error){catMsg(catErro(r.error,'Não foi possível renomear.'),false);return}
-      catMsg('Categoria renomeada (os itens dela acompanharam o novo nome).',true);await recarregarOnline(false);await catCarregar();return}
-    if(a==='excluir'){const c=CAT.find(x=>x.id===id),n=itensCat(c).length;
+    const bt=e.target.closest('button[data-a]');if(!bt)return;const tr=bt.closest('tr'),id=tr.dataset.c,a=bt.dataset.a,c=CAT.find(x=>x.id===id);if(!c)return;
+    if(a==='salvar'){bt.disabled=true;if(await catSalvarLinha(tr)){catMsg('Categoria '+c.nome+' salva.',true);catDesenhar()}else bt.disabled=false;return}
+    if(a==='itens'){if(catSujo.has(id)&&!await catSalvarLinha(tr))return;catSel=id;catDesenhar();$('catDet').scrollIntoView({behavior:'smooth',block:'start'});return}
+    if(a==='aplicar'){
+      if(catSujo.has(id)&&!await catSalvarLinha(tr))return;
+      const pad=c.padroes||{};if(!Object.keys(pad).length){catMsg('Preencha ao menos um percentual da categoria antes de aplicar.',false);return}
+      if(!can('ed_param')){catMsg('Você não tem permissão para alterar impostos e margem dos itens.',false);return}
+      const its=itensCat(c);if(!its.length){catMsg('A categoria não tem itens.',false);return}
+      if(!confirm('Aplicar os percentuais da categoria "'+c.nome+'" aos '+its.length+' itens dela? Isso muda impostos/margem desses itens para todos os usuários.'))return;
+      its.forEach(it=>{const par=Object.assign({},it.par||{},pad);delete par.tot;it.par=par;catRecalc(it);catEspelhar(it)});
+      save();render();catMsg('Aplicando em '+its.length+' itens…',true);
+      await salvarItensNoBanco(its);catMsg('Percentuais aplicados a '+its.length+' itens da categoria '+c.nome+'.',true);return}
+    if(a==='excluir'){const n=itensCat(c).length;
       if(!confirm('Excluir a categoria "'+c.nome+'"? Os '+n+' itens dela ficam sem categoria (não são apagados).'))return;
       const r=await SB.rpc('excluir_categoria',{p_cat:id});
       if(r.error){catMsg(msgErro(r.error,'Não foi possível excluir.'),false);return}
-      if(catSel===id)catSel=null;catMsg('Categoria excluída.',true);await recarregarOnline(false);await catCarregar()}};
-  $('catPadSalvar').onclick=async()=>{const c=CAT.find(x=>x.id===catSel);if(!c)return;
-    const pad={};PADK.forEach(([k])=>{const v=$('cp_'+k).value.trim();if(v!==''){const n=num(v);if(!isNaN(n))pad[k]=Math.min(100,Math.max(0,n))}});
-    const r=await SB.from('categorias').update({padroes:pad}).eq('id',c.id);
-    if(r.error){catMsg(msgErro(r.error,'Não foi possível salvar os percentuais.'),false);return}
-    c.padroes=pad;catMsg('Percentuais da categoria salvos. Use "Aplicar aos itens" para valer nos cálculos dos itens.',true);catDetalhe()};
-  $('catPadAplicar').onclick=async()=>{const c=CAT.find(x=>x.id===catSel);if(!c)return;
-    const pad=c.padroes||{};if(!Object.keys(pad).length){catMsg('Preencha e salve ao menos um percentual da categoria antes de aplicar.',false);return}
-    if(!can('ed_param')){catMsg('Você não tem permissão para alterar impostos e margem dos itens.',false);return}
-    const its=itensCat(c);if(!its.length){catMsg('A categoria não tem itens.',false);return}
-    if(!confirm('Aplicar os percentuais da categoria "'+c.nome+'" aos '+its.length+' itens dela? Isso muda impostos/margem desses itens para todos os usuários.'))return;
-    its.forEach(it=>{const par=Object.assign({},it.par||{},pad);delete par.tot;it.par=par;catRecalc(it);catEspelhar(it)});
-    save();render();catMsg('Aplicando em '+its.length+' itens…',true);
-    await salvarItensNoBanco(its);catMsg('Percentuais aplicados a '+its.length+' itens da categoria '+c.nome+'.',true);catDetalhe()};
+      if(catSel===id)catSel=null;catSujo.delete(id);catMsg('Categoria excluída.',true);await recarregarOnline(false);await catCarregar(true)}};
   $('catIt').onclick=async e=>{
     const bt=e.target.closest('button[data-a]');if(!bt)return;const tr=bt.closest('tr'),it=C.items.find(i=>i.id===tr.dataset.i);if(!it)return;
     if(bt.dataset.a==='salvar'){
