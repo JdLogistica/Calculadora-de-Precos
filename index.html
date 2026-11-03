@@ -202,6 +202,17 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
 /* tabelas de usuários e clientes (por último, para valer sobre as regras gerais da Matriz) */
 .mt.usr-t td{text-align:center;white-space:normal;min-width:0;vertical-align:middle}.mt.usr-t td:first-child{text-align:left;overflow-wrap:anywhere}
 .mt.usr-u{min-width:1100px}.mt.usr-u th:nth-child(1){width:20%}.mt.usr-u th:nth-child(2){width:9%}.mt.usr-u th:nth-child(3){width:15%}.mt.usr-u th:nth-child(4){width:17%}.mt.usr-u th:nth-child(5){width:7%}.mt.usr-u th:nth-child(6){width:32%}
+.cat-sub{padding:10px 14px 4px;font-weight:700;font-size:13px;color:var(--t6)}.cat-sub .leg{font-weight:400;margin-left:8px}
+.cat-pad{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;padding:6px 14px 4px}.cat-pad .field{margin:0}
+.cat-act{display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px 12px}
+.cat-i .ac button,#vCat .fbtn{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.cat-i .ac button{padding:5px 10px;font-size:12px}.cat-i .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}#vCat .fbtn:hover,.cat-i .ac button:hover{border-color:var(--t6)}
+.cat-t .ac button{border:1px solid var(--line);background:#fff;color:var(--t9);border-radius:4px;padding:5px 10px;font-weight:600;font-size:12px;cursor:pointer}.cat-t .ac button.pri{background:var(--t6);color:#fff;border-color:var(--t6)}.cat-t .ac button.del{color:var(--red)}
+#catForm{align-items:flex-end}
+.mt.cat-t{min-width:560px}.mt.cat-t th:nth-child(1){width:44%}.mt.cat-t th:nth-child(2){width:12%}.mt.cat-t th:nth-child(3){width:44%}.cat-t .ac{grid-template-columns:repeat(3,auto);justify-content:center}
+.mt.cat-i{min-width:900px;table-layout:fixed}.mt.cat-i th:nth-child(1){width:9%}.mt.cat-i th:nth-child(2){width:33%}.mt.cat-i th:nth-child(3),.mt.cat-i th:nth-child(4){width:12%}.mt.cat-i th:nth-child(5){width:12%}.mt.cat-i th:nth-child(6){width:22%}
+.mt.cat-i td{white-space:normal;vertical-align:middle}.mt.cat-i td:nth-child(2){text-align:left;min-width:0}.mt.cat-i .inp{width:100%;min-width:0;padding:6px 8px}.mt.cat-i .ac{display:flex;gap:6px;justify-content:center}
+.cat-add{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 14px 14px}.cat-add .field{margin:0;flex:1 1 320px}
 .mt.cli-t{min-width:560px}.mt.cli-t th:nth-child(1){width:46%}.mt.cli-t th:nth-child(2){width:18%}.mt.cli-t th:nth-child(3){width:36%}
 .cli-t .ac{grid-template-columns:110px}
 </style>
@@ -240,7 +251,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   <input type="file" id="file" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 </header>
 
-<nav class="tabs" id="tabs"><button class="tab on" data-v="vSim" type="button">Simulador</button><button class="tab" data-v="vMat" type="button">Matriz</button><button class="tab" data-v="vUsr" id="tabUsr" type="button" hidden>Usuários</button></nav>
+<nav class="tabs" id="tabs"><button class="tab on" data-v="vSim" type="button">Simulador</button><button class="tab" data-v="vMat" type="button">Matriz</button><button class="tab" data-v="vCat" id="tabCat" type="button" hidden>Categorias</button><button class="tab" data-v="vUsr" id="tabUsr" type="button" hidden>Usuários</button></nav>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Campos editáveis" aria-hidden="true">
   <div class="d-head">
@@ -320,6 +331,28 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     <button type="button" class="fbtn" id="fClear">Limpar filtro</button>
   </div>
   <div id="matBody"></div>
+</main>
+<main id="vCat" hidden>
+  <div class="strip" id="catStrip">Categorias · somente e-mails autorizados veem esta aba</div>
+  <section class="card cli-new">
+    <h3>Categorias <span class="leg" id="catCount"></span></h3>
+    <form id="catForm" autocomplete="off">
+      <div class="field"><label for="catNome">Nova categoria</label><input class="inp" id="catNome" type="text" maxlength="80" required placeholder="Nome da categoria (ex.: Bebidas quentes)"></div>
+      <button class="add usr-add" type="submit" id="catAdd" style="width:auto;padding:11px 22px">Cadastrar categoria</button>
+      <button class="fbtn" type="button" id="catBase" title="Cria as categorias que já vêm escritas na planilha importada">Trazer categorias da base</button>
+    </form>
+    <div class="usr-msg" id="catMsg" role="status" aria-live="polite" style="padding:0 14px 10px;margin-top:0"></div>
+    <div class="tw"><table class="mt usr-t cat-t"><thead><tr><th>Categoria</th><th>Itens</th><th>Ações</th></tr></thead><tbody id="catBody"></tbody></table></div>
+  </section>
+  <section class="card" id="catDet" hidden>
+    <h3 id="catDetT">Categoria</h3>
+    <div class="cat-sub">Percentuais da categoria <span class="leg">vazio = usa o padrão geral do simulador</span></div>
+    <div class="cat-pad" id="catPad"></div>
+    <div class="cat-act"><button class="add" type="button" id="catPadSalvar" style="width:auto;padding:9px 18px">Salvar percentuais</button><button class="fbtn" type="button" id="catPadAplicar">Aplicar aos itens da categoria</button></div>
+    <div class="cat-sub">Itens da categoria <span class="leg" id="catItCount"></span></div>
+    <div class="tw"><table class="mt cat-i"><thead><tr><th>Código</th><th>Descrição</th><th>Custo (R$)</th><th>Preço atual (R$)</th><th>Qtd. vendida</th><th>Ações</th></tr></thead><tbody id="catIt"></tbody></table></div>
+    <div class="cat-add"><div class="field"><label for="catIncl">Incluir item na categoria</label><input class="inp" id="catIncl" list="catLista" placeholder="Digite o código ou a descrição" autocomplete="off"><datalist id="catLista"></datalist></div><button class="fbtn" type="button" id="catInclOk">Incluir</button></div>
+  </section>
 </main>
 <main id="vUsr" hidden>
   <div class="strip" id="usrStrip">Usuários e clientes · somente o administrador vê esta página</div>
@@ -1001,7 +1034,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     else google.script.run.withSuccessHandler(ok).withFailureHandler(()=>ko({perm:true})).catalogo()};
   /* ===== LOGIN E BANCO ONLINE (Supabase): quem tem acesso aos dados consulta; editor/admin atualizam ===== */
   /* Permissões do usuário (o banco confere de novo; aqui só ajusta a tela) */
-  const FL=['ed_custo','ed_preco','ed_qtd','ed_desc','ed_param','gerir_base'];
+  const FL=['ed_custo','ed_preco','ed_qtd','ed_desc','ed_param','gerir_base','gerir_categorias'];
   const can=k=>!EMP||EMP.papel==='admin'||(EMP.papel==='editor'&&EMP[k]===true);
   const podeEditar=()=>!!EMP&&FL.slice(0,5).some(can);
   const podeBase=()=>!!EMP&&can('gerir_base');
@@ -1052,7 +1085,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       C={items:prods.map(p=>{const c=custo.get(p.id)||{};
         return{id:p.id,c:p.codigo,d:p.descricao,p:Number(p.preco)||0,k:Number(c.custo)||0,q:p.quadrante||null,cat:p.categoria||'',ps:nn(p.preco_sugerido),pm:nn(p.preco_marketplace),ct:nn(c.custo_total),mcp:nn(c.mc_atual),mka:nn(c.markup_atual),mks:nn(c.markup_sugerido),par:c.parametros?Object.assign({},c.parametros):null,pb:c.parametros&&c.parametros.pb,qt:nn(c.qtd_vendida)||0}}),
         name:'banco online · '+nomeCli()};
-      index();REMOTE=true;PREV_CLI=CLI_ID;SIG=sig0;const ns=sincTabela(prev);render();
+      index();REMOTE=true;PREV_CLI=CLI_ID;SIG=sig0;const ns=sincTabela(prev);render();if(!$('vCat').hidden)catDesenhar();
       if(porOutro)toast('Dados atualizados: outro usuário fez alterações'+(ns?' ('+ns+' item'+(ns>1?'s':'')+' da tabela)':'')+'.');
       else if(avisar)toast(C.items.length+' produtos atualizados do banco online.');
       return true
@@ -1060,6 +1093,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   /* Mantém todos conectados: confere a cada 30 s (e ao voltar para a aba) se alguém alterou algo */
   async function conferirMudancas(){
     if(document.hidden||!SB||!EMP||!CLI_ID||lendo||editIdx>=0||!REMOTE)return;
+    if(!$('vCat').hidden&&$('vCat').contains(document.activeElement)&&document.activeElement.tagName==='INPUT')return;
     const s=await assinatura();if(s&&SIG&&s!==SIG)await recarregarOnline(false,true)}
   setInterval(conferirMudancas,30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)conferirMudancas()});
@@ -1108,14 +1142,14 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
     const alvo=manter&&CLI.some(c=>c.id===manter)?manter:(CLI.some(c=>c.id===pref)?pref:(CLI[0]&&CLI[0].id)||null);
     desenharSeletor(alvo);return alvo}
   async function trocarCliente(id){
-    if(id===CLI_ID)return;usarCliente(id);C={items:[],name:''};index();render();await recarregarOnline(false);render()}
+    if(id===CLI_ID)return;usarCliente(id);C={items:[],name:''};catSel=null;index();render();await recarregarOnline(false);render();if(!$('vCat').hidden)catCarregar()}
   $('cliSel').onchange=e=>{trocarCliente(e.target.value)};
   async function entrou(ses){
-    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,acesso_todos,ed_custo,ed_preco,ed_qtd,ed_desc,ed_param,gerir_base,empresas(nome)').eq('user_id',ses.user.id);
+    const r=await SB.from('membros').select('empresa_id,papel,ver_custo,acesso_todos,ed_custo,ed_preco,ed_qtd,ed_desc,ed_param,gerir_base,gerir_categorias,empresas(nome)').eq('user_id',ses.user.id);
     if(r.error){showAuth('login');authMsg('Não foi possível verificar o seu acesso. Tente de novo.');return}
     if(!r.data||!r.data.length){showAuth('sem');return}
     usrMeuId=ses.user.id;const m=r.data[0];EMP=Object.assign({id:m.empresa_id,papel:m.papel,ver_custo:m.ver_custo,nome:(m.empresas&&m.empresas.nome)||'',todos:m.acesso_todos},Object.fromEntries(FL.map(k=>[k,m[k]===true])));
-    liberar();$('tabUsr').hidden=m.papel!=='admin';
+    liberar();$('tabUsr').hidden=m.papel!=='admin';$('tabCat').hidden=!podeCat();
     const alvo=await carregarClientes();usarCliente(alvo);travas();
     if(!CLI.length){C={items:[],name:''};index();render();toast(m.papel==='admin'?'Nenhum cliente cadastrado. Cadastre na aba Usuários ou importe uma planilha.':'Nenhum cliente liberado para o seu usuário. Peça ao administrador.');return}
     await recarregarOnline(false);render()}
@@ -1124,7 +1158,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
       s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js';
       s.onload=ok;s.onerror=()=>ko(new Error('lib'));document.head.appendChild(s)});
     SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;CLI=[];CLI_ID=null;$('cliBox').hidden=true;$('tabUsr').hidden=true;showAuth('login')}});
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')showAuth('senha');else if(ev==='SIGNED_OUT'){EMP=null;CLI=[];CLI_ID=null;$('cliBox').hidden=true;$('tabUsr').hidden=true;$('tabCat').hidden=true;CAT=[];catSel=null;showAuth('login')}});
     const g=await SB.auth.getSession();
     if(/type=(invite|recovery)/.test(location.hash)&&g.data.session){showAuth('senha');return}
     if(g.data.session)entrou(g.data.session);else showAuth('login')}
@@ -1147,7 +1181,7 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
   $('semSair').onclick=()=>$('outBtn').onclick();
   /* ---------- Página Usuários e Clientes (somente administrador) ---------- */
   const PAPEL={admin:'Administrador',editor:'Editor',leitor:'Leitor'};
-  const FLN={ed_custo:'Custo',ed_preco:'Preço de venda',ed_qtd:'Quantidade vendida',ed_desc:'Descrição',ed_param:'Impostos e margem do item',gerir_base:'Importar planilhas e reclassificar'};
+  const FLN={ed_custo:'Custo',ed_preco:'Preço de venda',ed_qtd:'Quantidade vendida',ed_desc:'Descrição',ed_param:'Impostos e margem do item',gerir_base:'Importar planilhas e reclassificar',gerir_categorias:'Aba Categorias'};
   const usrMsg=(t,ok)=>{const m=$('usrMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
   const cliMsg=(t,ok)=>{const m=$('cliMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
   async function usrChamar(body){
@@ -1279,9 +1313,99 @@ body:not(.ready)>:not(#auth):not(script):not(#toast){display:none!important}
         usrConf=null;
         await usrChamar({acao:'remover',email:em});usrMsg(em+' foi removido.',true);await usrCarregar()}
     }catch(x){usrMsg(x.message,false)}};
+
+  /* ---------- Categorias (por cliente; só admin e e-mails autorizados) ---------- */
+  const PADK=[['mc','Margem de contribuição (%)'],['mkt','Marketplace (%)'],['desc','Desconto (%)'],['csll','CSLL + IR (%)'],['pis','PIS (%)'],['cofins','COFINS (%)'],['icms','ICMS (%)'],['cartao','Cartão (%)'],['comissao','Comissão (%)']];
+  let CAT=[],catSel=null;
+  const podeCat=()=>!!EMP&&(EMP.papel==='admin'||(EMP.papel==='editor'&&EMP.gerir_categorias===true));
+  const catNorm=s=>String(s||'').trim().toLowerCase();
+  const itensCat=c=>C.items.filter(i=>catNorm(i.cat)===catNorm(c.nome));
+  const catMsg=(t,ok)=>{const m=$('catMsg');m.textContent=t||'';m.className='usr-msg'+(t?(ok?' ok':' er'):'')};
+  const catErro=(e,pad)=>/duplicate|unique|23505/i.test(String(e&&(e.message||e.code)||''))?'Já existe uma categoria com esse nome neste cliente.':msgErro(e,pad);
+  async function catCarregar(){
+    if(!SB||!EMP||!CLI_ID||!podeCat()){CAT=[];catDesenhar();return}
+    const r=await SB.from('categorias').select('id,nome,padroes').eq('empresa_id',EMP.id).eq('cliente_id',CLI_ID).order('nome');
+    if(r.error){$('catBody').innerHTML='<tr><td colspan="3" class="empty" style="text-align:center">Não foi possível carregar as categorias.</td></tr>';return}
+    CAT=r.data||[];if(catSel&&!CAT.some(c=>c.id===catSel))catSel=null;catDesenhar()}
+  function catDesenhar(){
+    $('catStrip').textContent='Categorias do cliente '+nomeCli()+' · somente e-mails autorizados veem esta aba';
+    $('catCount').textContent=CAT.length+(CAT.length===1?' categoria':' categorias');
+    $('catBody').innerHTML=CAT.map(c=>'<tr data-c="'+esc(c.id)+'" data-n="'+esc(c.nome)+'"'+(c.id===catSel?' class="sel"':'')+'><td style="text-align:left">'+esc(c.nome)+'</td><td>'+itensCat(c).length+'</td><td><div class="ac"><button type="button" class="pri" data-a="abrir">Abrir</button><button type="button" data-a="renomear">Renomear</button><button type="button" class="del" data-a="excluir">Excluir</button></div></td></tr>').join('')||'<tr><td colspan="3" class="empty" style="text-align:center">Nenhuma categoria cadastrada neste cliente.</td></tr>';
+    catDetalhe()}
+  function catDetalhe(){
+    const c=CAT.find(x=>x.id===catSel);$('catDet').hidden=!c;if(!c)return;
+    $('catDetT').textContent='Categoria: '+c.nome;
+    $('catPad').innerHTML=PADK.map(([k,l])=>'<div class="field"><label for="cp_'+k+'">'+l+'</label><input class="inp" id="cp_'+k+'" type="number" min="0" max="100" step="0.01" value="'+(c.padroes&&c.padroes[k]!=null?esc(c.padroes[k]):'')+'" placeholder="'+esc(S[k]!=null?S[k]:'')+'"></div>').join('');
+    const its=itensCat(c),vc=!EMP||EMP.papel!=='leitor'||EMP.ver_custo===true;
+    $('catItCount').textContent=its.length+(its.length===1?' item':' itens');
+    $('catIt').innerHTML=its.map(i=>'<tr data-i="'+esc(i.id)+'"><td>'+esc(i.c)+'</td><td><input class="inp" data-f="d" type="text" maxlength="200" value="'+esc(i.d||'')+'"'+(can('ed_desc')?'':' readonly title="Sem permissão para alterar a descrição"')+'></td>'+
+      '<td><input class="inp" data-f="k" type="number" min="0" step="0.01" value="'+(i.k==null?'':+(+i.k).toFixed(4))+'"'+(can('ed_custo')&&vc?'':' readonly title="Sem permissão para alterar o custo"')+'></td>'+
+      '<td><input class="inp" data-f="p" type="number" min="0" step="0.01" value="'+(i.p==null?'':+(+i.p).toFixed(4))+'"'+(can('ed_preco')?'':' readonly title="Sem permissão para alterar o preço"')+'></td>'+
+      '<td><input class="inp" data-f="qt" type="number" min="0" step="1" value="'+(i.qt||0)+'"'+(can('ed_qtd')?'':' readonly title="Sem permissão para alterar a quantidade"')+'></td>'+
+      '<td><div class="ac"><button type="button" class="pri" data-a="salvar">Salvar</button><button type="button" data-a="tirar">Tirar</button></div></td></tr>').join('')||'<tr><td colspan="6" class="empty" style="text-align:center">Nenhum item nesta categoria. Use "Incluir item" abaixo.</td></tr>';
+    const livres=C.items.filter(i=>catNorm(i.cat)!==catNorm(c.nome)).slice(0,2000);
+    $('catLista').innerHTML=livres.map(i=>'<option value="'+esc(i.c+' — '+(i.d||''))+'"></option>').join('')}
+  /* refaz os valores derivados de um item (mesmas fórmulas) e espelha na tabela de simulação deste navegador */
+  function catRecalc(it){const r=calc({code:it.c,name:it.d,cost:it.k,current:it.p,qty:0,par:it.par});Object.assign(it,{ct:r.ct,mcp:r.mcp,ps:r.sug,pm:it.pb==='S'?r.mktS:r.mktA,mka:r.mk,mks:r.mks})}
+  function catEspelhar(it){const row=S.products.find(p=>key(p.code)===key(it.c));if(!row)return;
+    const vc=!EMP||EMP.papel!=='leitor'||EMP.ver_custo===true;row.name=it.d||row.name;row.current=it.p;if(vc)row.cost=it.k;row.qty=it.qt||0;if(it.par)row.par=Object.assign({},it.par);else delete row.par}
+  $('catForm').onsubmit=async e=>{e.preventDefault();
+    const nome=$('catNome').value.trim().replace(/\s+/g,' '),b=$('catAdd');if(!nome)return;b.disabled=true;catMsg('Cadastrando…',true);
+    const r=await SB.from('categorias').insert({empresa_id:EMP.id,cliente_id:CLI_ID,nome}).select('id').single();b.disabled=false;
+    if(r.error){catMsg(catErro(r.error,'Não foi possível cadastrar a categoria. Confira a sua permissão.'),false);return}
+    $('catNome').value='';catSel=r.data&&r.data.id||null;catMsg('Categoria '+nome+' cadastrada. Inclua os itens nela abaixo.',true);await catCarregar()};
+  $('catBase').onclick=async()=>{catMsg('Buscando na base…',true);
+    const r=await SB.rpc('categorias_da_base',{p_empresa:EMP.id,p_cliente:CLI_ID});
+    if(r.error){catMsg(msgErro(r.error,'Não foi possível trazer as categorias da base.'),false);return}
+    catMsg(r.data?r.data+' categoria'+(r.data>1?'s':'')+' trazida'+(r.data>1?'s':'')+' da base.':'A base não tem categorias novas para trazer.',true);await catCarregar()};
+  $('catBody').onclick=async e=>{
+    const bt=e.target.closest('button[data-a]');if(!bt)return;const tr=bt.closest('tr'),id=tr.dataset.c,a=bt.dataset.a;
+    if(a==='abrir'){catSel=id;catDesenhar();$('catDet').scrollIntoView({behavior:'smooth',block:'start'});return}
+    if(a==='renomear'){const td=tr.children[0];td.innerHTML='<input class="inp" type="text" maxlength="80" value="'+esc(tr.dataset.n)+'" style="max-width:320px"> <button type="button" data-a="renomear-ok" class="pri" style="border:1px solid var(--t6);background:var(--t6);color:#fff;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer">OK</button>';td.querySelector('input').focus();return}
+    if(a==='renomear-ok'){const nome=tr.querySelector('input').value.trim().replace(/\s+/g,' ');if(!nome)return;
+      const r=await SB.rpc('renomear_categoria',{p_cat:id,p_nome:nome});
+      if(r.error){catMsg(catErro(r.error,'Não foi possível renomear.'),false);return}
+      catMsg('Categoria renomeada (os itens dela acompanharam o novo nome).',true);await recarregarOnline(false);await catCarregar();return}
+    if(a==='excluir'){const c=CAT.find(x=>x.id===id),n=itensCat(c).length;
+      if(!confirm('Excluir a categoria "'+c.nome+'"? Os '+n+' itens dela ficam sem categoria (não são apagados).'))return;
+      const r=await SB.rpc('excluir_categoria',{p_cat:id});
+      if(r.error){catMsg(msgErro(r.error,'Não foi possível excluir.'),false);return}
+      if(catSel===id)catSel=null;catMsg('Categoria excluída.',true);await recarregarOnline(false);await catCarregar()}};
+  $('catPadSalvar').onclick=async()=>{const c=CAT.find(x=>x.id===catSel);if(!c)return;
+    const pad={};PADK.forEach(([k])=>{const v=$('cp_'+k).value.trim();if(v!==''){const n=num(v);if(!isNaN(n))pad[k]=Math.min(100,Math.max(0,n))}});
+    const r=await SB.from('categorias').update({padroes:pad}).eq('id',c.id);
+    if(r.error){catMsg(msgErro(r.error,'Não foi possível salvar os percentuais.'),false);return}
+    c.padroes=pad;catMsg('Percentuais da categoria salvos. Use "Aplicar aos itens" para valer nos cálculos dos itens.',true);catDetalhe()};
+  $('catPadAplicar').onclick=async()=>{const c=CAT.find(x=>x.id===catSel);if(!c)return;
+    const pad=c.padroes||{};if(!Object.keys(pad).length){catMsg('Preencha e salve ao menos um percentual da categoria antes de aplicar.',false);return}
+    if(!can('ed_param')){catMsg('Você não tem permissão para alterar impostos e margem dos itens.',false);return}
+    const its=itensCat(c);if(!its.length){catMsg('A categoria não tem itens.',false);return}
+    if(!confirm('Aplicar os percentuais da categoria "'+c.nome+'" aos '+its.length+' itens dela? Isso muda impostos/margem desses itens para todos os usuários.'))return;
+    its.forEach(it=>{const par=Object.assign({},it.par||{},pad);delete par.tot;it.par=par;catRecalc(it);catEspelhar(it)});
+    save();render();catMsg('Aplicando em '+its.length+' itens…',true);
+    await salvarItensNoBanco(its);catMsg('Percentuais aplicados a '+its.length+' itens da categoria '+c.nome+'.',true);catDetalhe()};
+  $('catIt').onclick=async e=>{
+    const bt=e.target.closest('button[data-a]');if(!bt)return;const tr=bt.closest('tr'),it=C.items.find(i=>i.id===tr.dataset.i);if(!it)return;
+    if(bt.dataset.a==='salvar'){
+      const g=f=>tr.querySelector('[data-f="'+f+'"]').value,k=num(g('k')),p=num(g('p')),q=parseInt(g('qt'),10),d=g('d').trim();
+      if(!d||!(k>=0)||!(p>=0)||!(q>=0)){catMsg('Confira descrição, custo, preço e quantidade (valores válidos, sem negativos).',false);return}
+      if(it.d===d&&Math.abs((it.k||0)-k)<1e-9&&Math.abs((it.p||0)-p)<1e-9&&(it.qt||0)===q){catMsg('Nada mudou neste item.',true);return}
+      Object.assign(it,{d,k,p,qt:q});catRecalc(it);catEspelhar(it);save();render();
+      await salvarItensNoBanco([it]);catMsg('Item '+it.c+' salvo para todos os usuários.',true);return}
+    if(bt.dataset.a==='tirar'){
+      const r=await SB.from('produtos').update({categoria:null}).eq('id',it.id);
+      if(r.error){catMsg(msgErro(r.error,'Não foi possível tirar o item da categoria.'),false);return}
+      it.cat='';catMsg('Item '+it.c+' saiu da categoria.',true);catDesenhar()}};
+  $('catInclOk').onclick=async()=>{const c=CAT.find(x=>x.id===catSel);if(!c)return;
+    const v=$('catIncl').value.trim();if(!v)return;const cod=v.split(' — ')[0].trim();
+    const it=C.items.find(i=>key(i.c)===key(cod)&&i.id)||C.items.find(i=>i.id&&catNorm(i.c+' — '+i.d)===catNorm(v));
+    if(!it){catMsg('Item não encontrado neste cliente. Escolha um da lista.',false);return}
+    const r=await SB.from('produtos').update({categoria:c.nome}).eq('id',it.id);
+    if(r.error){catMsg(msgErro(r.error,'Não foi possível incluir o item.'),false);return}
+    it.cat=c.nome;$('catIncl').value='';catMsg('Item '+it.c+' incluído em '+c.nome+'.',true);catDesenhar()};
   $('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));
-    ['vSim','vMat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr'){cliCarregar().then(usrCarregar)}};
+    ['vSim','vMat','vCat','vUsr'].forEach(id=>{$(id).hidden=id!==b.dataset.v});if(b.dataset.v==='vUsr'){cliCarregar().then(usrCarregar)}if(b.dataset.v==='vCat')catCarregar()};
   if(SUPABASE_URL&&SUPABASE_ANON_KEY)iniciarLogin().catch(()=>{showAuth('login');authMsg('Não foi possível carregar o login. Verifique a conexão.')});
   else document.body.classList.add('ready');
   render();
